@@ -11,7 +11,6 @@ const randomDot = () => {
 	return {
 		cx: CENTER + radius * Math.cos(angle),
 		cy: CENTER + radius * Math.sin(angle),
-		opacity: 0.4 + Math.random() * 0.6,
 	};
 };
 
@@ -28,7 +27,7 @@ export const DotSwarm = () => {
 			aria-hidden="true"
 		>
 			{dots.map((dot, i) => (
-				<circle key={i} cx={dot.cx} cy={dot.cy} r={DOT_RADIUS} opacity={dot.opacity} />
+				<circle key={i} cx={dot.cx} cy={dot.cy} r={DOT_RADIUS} />
 			))}
 		</svg>
 	);
