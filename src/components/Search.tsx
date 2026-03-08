@@ -9,25 +9,21 @@ const elements: Element[] = indexData.elements as Element[];
 const docUrl = (element: Element): string =>
 	`https://docs.aws.amazon.com/cdk/api/v2/docs/${element.module}.${element.name}.html`;
 
-const randomSample = (items: Element[], size: number, seed: number): Element[] => {
-	// Fisher-Yates shuffle on a copy, using a simple seeded-ish approach
-	const copy = [...items];
-	let s = seed;
-	for (let i = copy.length - 1; i > 0; i--) {
-		s = (s * 1664525 + 1013904223) >>> 0;
-		const j = s % (i + 1);
-		[copy[i], copy[j]] = [copy[j], copy[i]];
+export function fisherYates<T>(a: T[]): T[] {
+	for (let i = a.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[a[i], a[j]] = [a[j], a[i]];
 	}
-	return copy.slice(0, size);
-};
+	return a;
+}
+
+const randomSample = (items: Element[], size: number): Element[] =>
+	fisherYates([...items]).slice(0, size);
 
 export const Search = () => {
 	const [query, setQuery] = useState("");
 
-	// Stable random seed computed once on mount
-	const [seed] = useState(() => Math.floor(Math.random() * 2 ** 32));
-
-	const sample = useMemo(() => randomSample(elements, SAMPLE_SIZE, seed), [seed]);
+	const sample = useMemo(() => randomSample(elements, SAMPLE_SIZE), []);
 
 	const results = useMemo(() => {
 		if (query.trim() === "") return sample;
@@ -54,9 +50,7 @@ export const Search = () => {
 			/>
 
 			<p className="mt-3 text-xs text-gray-400">
-				{isFiltered
-					? `${results.length} result${results.length === 1 ? "" : "s"}`
-					: `Showing a random sample — type to search all ${elements.length.toLocaleString()} resources`}
+				{isFiltered ? `${results.length} result${results.length === 1 ? "" : "s"}` : ""}
 			</p>
 
 			{results.length === 0 ? (
