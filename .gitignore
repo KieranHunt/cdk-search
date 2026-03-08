@@ -1,5 +1,0 @@
-node_modules/
-dist/
-*.lock
-.DS_Store
-aws-cdk
