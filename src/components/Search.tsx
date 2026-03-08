@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 
 import indexData from "../../public/search-index.json";
 import type { Element } from "../types";
+import { DotSwarm } from "./DotSwarm";
 
 const elements: Element[] = indexData.elements as Element[];
 const generatedAt: string = indexData.generatedAt as string;
@@ -52,9 +53,7 @@ export const Search = () => {
 				{results.length} result{results.length === 1 ? "" : "s"}
 			</p>
 
-			{results.length === 0 ? (
-				<p className="mt-2 text-sm text-gray-500">No results for &ldquo;{query}&rdquo;</p>
-			) : (
+			{results.length > 0 && (
 				<ul className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white shadow-sm">
 					{results.map((el) => (
 						<li key={el.id}>
@@ -75,13 +74,20 @@ export const Search = () => {
 			)}
 
 			{!isFiltered && (
-				<>
-					<hr className="my-6 border-gray-200" />
-					<p className="text-xs text-gray-400">
-						Search through all CDK constructs vended by aws-cdk-lib. Last updated @ {generatedAt}.{" "}
-						{elements.length.toLocaleString()} constructs are in the index.
-					</p>
-				</>
+				<div className="mt-6 pl-3 text-xs text-gray-400 flex justify-between">
+					<div>
+						<p>Last updated @ {generatedAt}.</p>
+						<p>{elements.length.toLocaleString()} constructs are in the index.</p>
+					</div>
+					<div className="text-right">
+						<p>
+							Made with <DotSwarm /> by{" "}
+							<a href="https://kieran.casa" className="no-underline text-gray-400">
+								Kieran
+							</a>
+						</p>
+					</div>
+				</div>
 			)}
 		</div>
 	);
