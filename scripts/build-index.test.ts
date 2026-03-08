@@ -1,131 +1,181 @@
 import { describe, expect, it } from "vitest";
-import { parseModules } from "./build-index";
+import { deriveService, parseIndex } from "./build-index";
 
-// Minimal helper to wrap content in the .navGroups container
+// Helpers to build fixture HTML
+
 const navGroups = (inner: string) => `<div class="navGroups">${inner}</div>`;
 
-const navGroup = (title: string, href?: string) => `
-  <div class="navGroup">
-    <h3 class="navGroupCategoryTitle collapsible">${title}<span class="arrow"></span></h3>
+const subNavGroup = (title: string, items: string[]) => `
+  <div class="navGroup subNavGroup" role="listitem">
+    <h4 class="navGroupSubcategoryTitle" role="presentation">${title}</h4>
     <ul>
-      ${href ? `<li class="navListItem"><a class="navItem" href="${href}">${title}</a></li>` : ""}
+      ${items.map((item) => `<li class="navListItem"><a class="navItem">${item}</a></li>`).join("")}
     </ul>
   </div>`;
 
-const API_REFERENCE_GROUP = navGroup(
-	"API Reference",
-	"/cdk/api/v2/docs/aws-construct-library.html",
-);
+const navGroup = (title: string, subNavGroups: string = "") => `
+  <div class="navGroup">
+    <h3 class="navGroupCategoryTitle collapsible">${title}<span class="arrow"></span></h3>
+    <ul>
+      <li class="navListItem"><a class="navItem" href="#">Overview</a></li>
+      ${subNavGroups}
+    </ul>
+  </div>`;
 
-describe("parseModules", () => {
-	it("returns an empty array for empty HTML", () => {
-		expect(parseModules("")).toMatchInlineSnapshot(`[]`);
+const API_REFERENCE_GROUP = navGroup("API Reference");
+
+describe("deriveService", () => {
+	it("strips aws-cdk-lib.aws_ prefix", () => {
+		expect(deriveService("aws-cdk-lib.aws_fis")).toMatchInlineSnapshot(`"fis"`);
 	});
 
-	it("excludes blocklisted groups", () => {
-		const html = navGroups(API_REFERENCE_GROUP);
-		expect(parseModules(html)).toMatchInlineSnapshot(`[]`);
+	it("strips aws-cdk-lib.aws_ prefix for s3", () => {
+		expect(deriveService("aws-cdk-lib.aws_s3")).toMatchInlineSnapshot(`"s3"`);
 	});
 
-	it("excludes blocklisted groups regardless of position", () => {
-		const html = navGroups(
-			navGroup("aws-cdk-lib", "/cdk/api/v2/docs/aws-cdk-lib-readme.html") + API_REFERENCE_GROUP,
-		);
-		expect(parseModules(html)).toMatchInlineSnapshot(`
-      [
-        {
-          "name": "aws-cdk-lib",
-          "url": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib-readme.html",
-        },
-      ]
+	it("strips aws-cdk-lib. but not aws_ when there is no aws_ prefix", () => {
+		expect(deriveService("aws-cdk-lib.alexa_ask")).toMatchInlineSnapshot(`"alexa_ask"`);
+	});
+
+	it("returns the name unchanged when there is no submodule", () => {
+		expect(deriveService("aws-cdk-lib")).toMatchInlineSnapshot(`"aws-cdk-lib"`);
+	});
+});
+
+describe("parseIndex", () => {
+	it("returns empty elements for empty HTML", () => {
+		expect(parseIndex("")).toMatchInlineSnapshot(`
+      {
+        "elements": [],
+      }
     `);
 	});
 
-	it("parses a single module", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP + navGroup("aws-cdk-lib", "/cdk/api/v2/docs/aws-cdk-lib-readme.html"),
-		);
-		expect(parseModules(html)).toMatchInlineSnapshot(`
-      [
-        {
-          "name": "aws-cdk-lib",
-          "url": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib-readme.html",
-        },
-      ]
+	it("returns empty elements for blocklisted groups only", () => {
+		expect(parseIndex(navGroups(API_REFERENCE_GROUP))).toMatchInlineSnapshot(`
+      {
+        "elements": [],
+      }
     `);
 	});
 
-	it("parses multiple modules in order", () => {
+	it("returns empty elements for a module with no CloudFormation Resources subgroup", () => {
 		const html = navGroups(
 			API_REFERENCE_GROUP +
-				navGroup("aws-cdk-lib", "/cdk/api/v2/docs/aws-cdk-lib-readme.html") +
-				navGroup("aws-cdk-lib.aws_s3", "/cdk/api/v2/docs/aws-cdk-lib.aws_s3-readme.html") +
-				navGroup("aws-cdk-lib.aws_lambda", "/cdk/api/v2/docs/aws-cdk-lib.aws_lambda-readme.html"),
+				navGroup(
+					"aws-cdk-lib.aws_s3",
+					subNavGroup("Interfaces", ["IBucket"]) + subNavGroup("Enums", ["BucketEncryption"]),
+				),
 		);
-		expect(parseModules(html)).toMatchInlineSnapshot(`
-      [
-        {
-          "name": "aws-cdk-lib",
-          "url": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib-readme.html",
-        },
-        {
-          "name": "aws-cdk-lib.aws_s3",
-          "url": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3-readme.html",
-        },
-        {
-          "name": "aws-cdk-lib.aws_lambda",
-          "url": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_lambda-readme.html",
-        },
-      ]
+		expect(parseIndex(html)).toMatchInlineSnapshot(`
+      {
+        "elements": [],
+      }
     `);
 	});
 
-	it("skips a group that has no <a> href", () => {
+	it("parses CloudFormation Resources from a single module", () => {
 		const html = navGroups(
 			API_REFERENCE_GROUP +
-				`<div class="navGroup">
-          <h3 class="navGroupCategoryTitle collapsible">aws-cdk-lib.aws_empty</h3>
-          <ul></ul>
-        </div>` +
-				navGroup("aws-cdk-lib.aws_s3", "/cdk/api/v2/docs/aws-cdk-lib.aws_s3-readme.html"),
+				navGroup(
+					"aws-cdk-lib.aws_fis",
+					subNavGroup("CloudFormation Resources", [
+						"CfnExperimentTemplate",
+						"CfnTargetAccountConfiguration",
+					]),
+				),
 		);
-		expect(parseModules(html)).toMatchInlineSnapshot(`
-      [
-        {
-          "name": "aws-cdk-lib.aws_s3",
-          "url": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3-readme.html",
-        },
-      ]
+		expect(parseIndex(html)).toMatchInlineSnapshot(`
+      {
+        "elements": [
+          {
+            "name": "CfnExperimentTemplate",
+            "service": "fis",
+            "type": "CloudFormation Resource",
+          },
+          {
+            "name": "CfnTargetAccountConfiguration",
+            "service": "fis",
+            "type": "CloudFormation Resource",
+          },
+        ],
+      }
     `);
 	});
 
-	it("uses the readme link, not links from subNavGroups", () => {
-		// Reproduces the real structure: a module group whose first <a> is the readme,
-		// followed by subNavGroup items with individual construct links
+	it("flattens CloudFormation Resources from multiple modules in order", () => {
 		const html = navGroups(
 			API_REFERENCE_GROUP +
-				`<div class="navGroup">
-          <h3 class="navGroupCategoryTitle collapsible">aws-cdk-lib.aws_s3<span class="arrow"></span></h3>
-          <ul>
-            <li class="navListItem">
-              <a class="navItem" href="/cdk/api/v2/docs/aws-cdk-lib.aws_s3-readme.html">Overview</a>
-            </li>
-            <div class="navGroup subNavGroup">
-              <h4>Constructs</h4>
-              <ul>
-                <li><a href="/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html">Bucket</a></li>
-              </ul>
-            </div>
-          </ul>
-        </div>`,
+				navGroup(
+					"aws-cdk-lib.aws_s3",
+					subNavGroup("CloudFormation Resources", ["CfnBucket", "CfnBucketPolicy"]),
+				) +
+				navGroup(
+					"aws-cdk-lib.aws_fis",
+					subNavGroup("CloudFormation Resources", ["CfnExperimentTemplate"]),
+				),
 		);
-		expect(parseModules(html)).toMatchInlineSnapshot(`
-      [
-        {
-          "name": "aws-cdk-lib.aws_s3",
-          "url": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3-readme.html",
-        },
-      ]
+		expect(parseIndex(html)).toMatchInlineSnapshot(`
+      {
+        "elements": [
+          {
+            "name": "CfnBucket",
+            "service": "s3",
+            "type": "CloudFormation Resource",
+          },
+          {
+            "name": "CfnBucketPolicy",
+            "service": "s3",
+            "type": "CloudFormation Resource",
+          },
+          {
+            "name": "CfnExperimentTemplate",
+            "service": "fis",
+            "type": "CloudFormation Resource",
+          },
+        ],
+      }
+    `);
+	});
+
+	it("ignores non-CloudFormation Resources subgroups alongside CFN ones", () => {
+		const html = navGroups(
+			API_REFERENCE_GROUP +
+				navGroup(
+					"aws-cdk-lib.aws_s3",
+					subNavGroup("Constructs", ["Bucket"]) +
+						subNavGroup("CloudFormation Resources", ["CfnBucket"]) +
+						subNavGroup("Interfaces", ["IBucket"]),
+				),
+		);
+		expect(parseIndex(html)).toMatchInlineSnapshot(`
+      {
+        "elements": [
+          {
+            "name": "CfnBucket",
+            "service": "s3",
+            "type": "CloudFormation Resource",
+          },
+        ],
+      }
+    `);
+	});
+
+	it("preserves underscores in service names without aws_ prefix", () => {
+		const html = navGroups(
+			API_REFERENCE_GROUP +
+				navGroup("aws-cdk-lib.alexa_ask", subNavGroup("CloudFormation Resources", ["CfnSkill"])),
+		);
+		expect(parseIndex(html)).toMatchInlineSnapshot(`
+      {
+        "elements": [
+          {
+            "name": "CfnSkill",
+            "service": "alexa_ask",
+            "type": "CloudFormation Resource",
+          },
+        ],
+      }
     `);
 	});
 });

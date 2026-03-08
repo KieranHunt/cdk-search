@@ -4,28 +4,54 @@ import { fileURLToPath } from "node:url";
 import { load } from "cheerio";
 
 const SIDENAV_URL = "https://docs.aws.amazon.com/cdk/api/v2/_sidenav.lmth";
-const CDK_DOCS_BASE = "https://docs.aws.amazon.com";
 
 const BLOCKLIST = new Set(["API Reference"]);
 
-export interface Module {
+export interface Element {
 	name: string;
-	url: string;
+	type: "CloudFormation Resource";
+	service: string;
 }
 
-export function parseModules(html: string): Module[] {
+export interface Index {
+	elements: Element[];
+}
+
+export function deriveService(moduleName: string): string {
+	return moduleName.replace(/^aws-cdk-lib\./, "").replace(/^aws_/, "");
+}
+
+export function parseIndex(html: string): Index {
 	const $ = load(html);
 
-	return $(".navGroups > div")
+	const elements = $(".navGroups > div")
 		.toArray()
 		.flatMap((el) => {
 			const name = $(el).find("h3.navGroupCategoryTitle").first().text().trim();
-			const href = $(el).find("a").first().attr("href");
 
-			if (!name || !href || BLOCKLIST.has(name)) return [];
+			if (!name || BLOCKLIST.has(name)) return [];
 
-			return [{ name, url: `${CDK_DOCS_BASE}${href}` }];
+			const service = deriveService(name);
+
+			return $(el)
+				.find("h4.navGroupSubcategoryTitle")
+				.toArray()
+				.flatMap((h4) => {
+					if ($(h4).text().trim() !== "CloudFormation Resources") return [];
+
+					return $(h4)
+						.next("ul")
+						.find("li a")
+						.toArray()
+						.map((a) => ({
+							name: $(a).text().trim(),
+							type: "CloudFormation Resource" as const,
+							service,
+						}));
+				});
 		});
+
+	return { elements };
 }
 
 async function main() {
@@ -36,16 +62,16 @@ async function main() {
 	}
 
 	const html = await response.text();
-	const modules = parseModules(html);
+	const index = parseIndex(html);
 
 	const scriptDir = dirname(fileURLToPath(import.meta.url));
 	const outDir = join(scriptDir, "..", "public");
 	const outFile = join(outDir, "search-index.json");
 
 	await mkdir(outDir, { recursive: true });
-	await writeFile(outFile, JSON.stringify(modules, null, 2));
+	await writeFile(outFile, JSON.stringify(index, null, 2));
 
-	console.log(`Wrote ${modules.length} modules to ${outFile}`);
+	console.log(`Wrote ${index.elements.length} elements to ${outFile}`);
 }
 
 // Only run when executed directly, not when imported by tests
