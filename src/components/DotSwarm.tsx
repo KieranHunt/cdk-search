@@ -3,13 +3,14 @@ const MAX_RADIUS = 9;
 const VIEW_SIZE = 20;
 const CENTER = VIEW_SIZE / 2;
 
+const DOT_RADIUS = 1.3;
+
 const randomDot = () => {
 	const angle = Math.random() * 2 * Math.PI;
 	const radius = Math.random() * Math.random() * MAX_RADIUS;
 	return {
 		cx: CENTER + radius * Math.cos(angle),
 		cy: CENTER + radius * Math.sin(angle),
-		r: 0.8 + Math.random() * 1.2,
 		opacity: 0.4 + Math.random() * 0.6,
 	};
 };
@@ -27,7 +28,7 @@ export const DotSwarm = () => {
 			aria-hidden="true"
 		>
 			{dots.map((dot, i) => (
-				<circle key={i} cx={dot.cx} cy={dot.cy} r={dot.r} opacity={dot.opacity} />
+				<circle key={i} cx={dot.cx} cy={dot.cy} r={DOT_RADIUS} opacity={dot.opacity} />
 			))}
 		</svg>
 	);
