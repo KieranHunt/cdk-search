@@ -1,8 +1,9 @@
 export interface Element {
+	id: string;
 	name: string;
-	type: "CloudFormation Resource";
+	type: "CloudFormation Resource" | "Construct";
 	service: string;
-	module: string;
+	cdkReferenceDoc: string;
 }
 
 export interface Index {

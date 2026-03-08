@@ -3,12 +3,9 @@ import { useMemo, useState } from "react";
 import indexData from "../../public/search-index.json";
 import type { Element } from "../types";
 
-const SAMPLE_SIZE = 7;
-
 const elements: Element[] = indexData.elements as Element[];
 
-const docUrl = (element: Element): string =>
-	`https://docs.aws.amazon.com/cdk/api/v2/docs/${element.module}.${element.name}.html`;
+const SAMPLE_SIZE = 7;
 
 export const fisherYates = <T,>(a: T[]): T[] => {
 	for (let i = a.length - 1; i > 0; i--) {
@@ -59,9 +56,9 @@ export const Search = () => {
 			) : (
 				<ul className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white shadow-sm">
 					{results.map((el) => (
-						<li key={`${el.module}.${el.name}`}>
+						<li key={el.id}>
 							<a
-								href={docUrl(el)}
+								href={el.cdkReferenceDoc}
 								target="_blank"
 								rel="noreferrer"
 								className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"

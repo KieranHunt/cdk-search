@@ -4,20 +4,13 @@ import { fileURLToPath } from "node:url";
 
 import { load } from "cheerio";
 
+import type { Element, Index } from "../src/types";
+
 const SIDENAV_URL = "https://docs.aws.amazon.com/cdk/api/v2/_sidenav.lmth";
 
+const CDK_DOCS_BASE = "https://docs.aws.amazon.com/cdk/api/v2/docs";
+
 const BLOCKLIST = new Set(["API Reference"]);
-
-export interface Element {
-	name: string;
-	type: "CloudFormation Resource" | "Construct";
-	service: string;
-	module: string;
-}
-
-export interface Index {
-	elements: Element[];
-}
 
 const SUBGROUP_TYPES: Partial<Record<string, Element["type"]>> = {
 	"CloudFormation Resources": "CloudFormation Resource",
@@ -51,12 +44,17 @@ export const parseIndex = (html: string): Index => {
 						.next("ul")
 						.find("li a")
 						.toArray()
-						.map((a) => ({
-							name: $(a).text().trim(),
-							type,
-							service,
-							module: name,
-						}));
+						.map((a) => {
+							const elementName = $(a).text().trim();
+							const id = `${name}.${elementName}`;
+							return {
+								id,
+								name: elementName,
+								type,
+								service,
+								cdkReferenceDoc: `${CDK_DOCS_BASE}/${id}.html`,
+							};
+						});
 				});
 		});
 
