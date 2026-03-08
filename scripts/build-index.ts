@@ -9,7 +9,7 @@ const BLOCKLIST = new Set(["API Reference"]);
 
 export interface Element {
 	name: string;
-	type: "CloudFormation Resource";
+	type: "CloudFormation Resource" | "Construct";
 	service: string;
 	module: string;
 }
@@ -17,6 +17,11 @@ export interface Element {
 export interface Index {
 	elements: Element[];
 }
+
+const SUBGROUP_TYPES: Partial<Record<string, Element["type"]>> = {
+	"CloudFormation Resources": "CloudFormation Resource",
+	Constructs: "Construct",
+};
 
 export function deriveService(moduleName: string): string {
 	return moduleName.replace(/^aws-cdk-lib\./, "").replace(/^aws_/, "");
@@ -38,7 +43,9 @@ export function parseIndex(html: string): Index {
 				.find("h4.navGroupSubcategoryTitle")
 				.toArray()
 				.flatMap((h4) => {
-					if ($(h4).text().trim() !== "CloudFormation Resources") return [];
+					const type = SUBGROUP_TYPES[$(h4).text().trim()];
+
+					if (!type) return [];
 
 					return $(h4)
 						.next("ul")
@@ -46,7 +53,7 @@ export function parseIndex(html: string): Index {
 						.toArray()
 						.map((a) => ({
 							name: $(a).text().trim(),
-							type: "CloudFormation Resource" as const,
+							type,
 							service,
 							module: name,
 						}));

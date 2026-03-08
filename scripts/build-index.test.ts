@@ -59,7 +59,7 @@ describe("parseIndex", () => {
     `);
 	});
 
-	it("returns empty elements for a module with no CloudFormation Resources subgroup", () => {
+	it("returns empty elements for a module with no indexed subgroups", () => {
 		const html = navGroups(
 			API_REFERENCE_GROUP +
 				navGroup(
@@ -143,7 +143,7 @@ describe("parseIndex", () => {
 		`);
 	});
 
-	it("ignores non-CloudFormation Resources subgroups alongside CFN ones", () => {
+	it("indexes Constructs alongside CloudFormation Resources in document order", () => {
 		const html = navGroups(
 			API_REFERENCE_GROUP +
 				navGroup(
@@ -154,17 +154,57 @@ describe("parseIndex", () => {
 				),
 		);
 		expect(parseIndex(html)).toMatchInlineSnapshot(`
-			{
-			  "elements": [
-			    {
-			      "module": "aws-cdk-lib.aws_s3",
-			      "name": "CfnBucket",
-			      "service": "s3",
-			      "type": "CloudFormation Resource",
-			    },
-			  ],
-			}
-		`);
+      {
+        "elements": [
+          {
+            "module": "aws-cdk-lib.aws_s3",
+            "name": "Bucket",
+            "service": "s3",
+            "type": "Construct",
+          },
+          {
+            "module": "aws-cdk-lib.aws_s3",
+            "name": "CfnBucket",
+            "service": "s3",
+            "type": "CloudFormation Resource",
+          },
+        ],
+      }
+    `);
+	});
+
+	it("parses Constructs from a module with only Constructs", () => {
+		const html = navGroups(
+			API_REFERENCE_GROUP +
+				navGroup("aws-cdk-lib.aws_lambda_nodejs", subNavGroup("Constructs", ["NodejsFunction"])),
+		);
+		expect(parseIndex(html)).toMatchInlineSnapshot(`
+      {
+        "elements": [
+          {
+            "module": "aws-cdk-lib.aws_lambda_nodejs",
+            "name": "NodejsFunction",
+            "service": "lambda_nodejs",
+            "type": "Construct",
+          },
+        ],
+      }
+    `);
+	});
+
+	it("ignores subgroups that are not Constructs or CloudFormation Resources", () => {
+		const html = navGroups(
+			API_REFERENCE_GROUP +
+				navGroup(
+					"aws-cdk-lib.aws_s3",
+					subNavGroup("Structs", ["BucketProps"]) + subNavGroup("Interfaces", ["IBucket"]),
+				),
+		);
+		expect(parseIndex(html)).toMatchInlineSnapshot(`
+      {
+        "elements": [],
+      }
+    `);
 	});
 
 	it("preserves underscores in service names without aws_ prefix", () => {
