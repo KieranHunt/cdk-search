@@ -1,5 +1,3 @@
 import type { ReactNode } from "react";
 
-export function Layout({ children }: { children: ReactNode }) {
-	return <main>{children}</main>;
-}
+export const Layout = ({ children }: { children: ReactNode }) => <main>{children}</main>;

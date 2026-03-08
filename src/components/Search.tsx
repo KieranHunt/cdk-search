@@ -6,11 +6,10 @@ const SAMPLE_SIZE = 7;
 
 const elements: Element[] = indexData.elements as Element[];
 
-function docUrl(element: Element): string {
-	return `https://docs.aws.amazon.com/cdk/api/v2/docs/${element.module}.${element.name}.html`;
-}
+const docUrl = (element: Element): string =>
+	`https://docs.aws.amazon.com/cdk/api/v2/docs/${element.module}.${element.name}.html`;
 
-function randomSample(items: Element[], size: number, seed: number): Element[] {
+const randomSample = (items: Element[], size: number, seed: number): Element[] => {
 	// Fisher-Yates shuffle on a copy, using a simple seeded-ish approach
 	const copy = [...items];
 	let s = seed;
@@ -20,9 +19,9 @@ function randomSample(items: Element[], size: number, seed: number): Element[] {
 		[copy[i], copy[j]] = [copy[j], copy[i]];
 	}
 	return copy.slice(0, size);
-}
+};
 
-export function Search() {
+export const Search = () => {
 	const [query, setQuery] = useState("");
 
 	// Stable random seed computed once on mount
@@ -83,4 +82,4 @@ export function Search() {
 			)}
 		</div>
 	);
-}
+};

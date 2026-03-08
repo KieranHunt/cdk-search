@@ -23,11 +23,10 @@ const SUBGROUP_TYPES: Partial<Record<string, Element["type"]>> = {
 	Constructs: "Construct",
 };
 
-export function deriveService(moduleName: string): string {
-	return moduleName.replace(/^aws-cdk-lib\./, "").replace(/^aws_/, "");
-}
+export const deriveService = (moduleName: string): string =>
+	moduleName.replace(/^aws-cdk-lib\./, "").replace(/^aws_/, "");
 
-export function parseIndex(html: string): Index {
+export const parseIndex = (html: string): Index => {
 	const $ = load(html);
 
 	const elements = $(".navGroups > div")
@@ -61,9 +60,9 @@ export function parseIndex(html: string): Index {
 		});
 
 	return { elements };
-}
+};
 
-async function main() {
+const main = async () => {
 	console.log(`Fetching sidenav from ${SIDENAV_URL}...`);
 	const response = await fetch(SIDENAV_URL);
 	if (!response.ok) {
@@ -81,7 +80,7 @@ async function main() {
 	await writeFile(outFile, JSON.stringify(index, null, 2));
 
 	console.log(`Wrote ${index.elements.length} elements to ${outFile}`);
-}
+};
 
 // Only run when executed directly, not when imported by tests
 const isMain =
