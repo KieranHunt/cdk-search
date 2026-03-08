@@ -1,5 +1,4 @@
 import tailwind from "bun-plugin-tailwind";
-import "./scripts/build-index";
 
 const result = await Bun.build({
 	entrypoints: ["./index.html"],
