@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+
 import indexData from "../../public/search-index.json";
 import type { Element } from "../types";
 
@@ -9,13 +10,13 @@ const elements: Element[] = indexData.elements as Element[];
 const docUrl = (element: Element): string =>
 	`https://docs.aws.amazon.com/cdk/api/v2/docs/${element.module}.${element.name}.html`;
 
-export function fisherYates<T>(a: T[]): T[] {
+export const fisherYates = <T,>(a: T[]): T[] => {
 	for (let i = a.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
 		[a[i], a[j]] = [a[j], a[i]];
 	}
 	return a;
-}
+};
 
 const randomSample = (items: Element[], size: number): Element[] =>
 	fisherYates([...items]).slice(0, size);

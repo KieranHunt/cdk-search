@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { deriveService, parseIndex } from "./build-index";
 
 // Helpers to build fixture HTML

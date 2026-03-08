@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+
 import { Layout } from "./components/Layout";
 import { Search } from "./components/Search";
 
