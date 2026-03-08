@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "bun ./index.html",
-		"prebuild": "bun run build:index && tsc --noEmit && oxlint src/ scripts/ build.ts vitest.config.ts && oxfmt --check src/ scripts/ build.ts vitest.config.ts && vitest run",
+		"prebuild": "bun run build:index && bun run check && bun run lint && bun run test",
 		"build": "bun run build.ts",
 		"build:index": "bun run scripts/build-index.ts",
 		"test": "vitest run",
