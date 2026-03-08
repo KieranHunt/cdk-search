@@ -7,7 +7,7 @@ const DOT_RADIUS = 1.3;
 const MIN_GAP = DOT_RADIUS * 2;
 const MAX_ATTEMPTS = 100;
 
-type Dot = { cx: number; cy: number };
+type Dot = { cx: number; cy: number; opacity: number };
 
 const randomCandidate = (): Dot => {
 	const angle = Math.random() * 2 * Math.PI;
