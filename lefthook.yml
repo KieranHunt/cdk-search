@@ -1,5 +1,4 @@
 pre-commit:
   commands:
-    lint-fix:
-      glob: "*.{ts,tsx,json}"
-      run: bunx biome check --write {staged_files} && git add {staged_files}
+    prebuild:
+      run: bun run prebuild
