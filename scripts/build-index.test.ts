@@ -248,6 +248,29 @@ describe("parseIndex", () => {
     `);
 	});
 
+	it("strips superscript footnote characters from module names", () => {
+		const html = navGroups(
+			API_REFERENCE_GROUP +
+				navGroup(
+					"aws-cdk-lib.aws_route53profiles¹",
+					subNavGroup("CloudFormation Resources", ["CfnProfile"]),
+				),
+		);
+		expect(parseIndex(html)).toMatchInlineSnapshot(`
+      {
+        "elements": [
+          {
+            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_route53profiles.CfnProfile.html",
+            "id": "aws-cdk-lib.aws_route53profiles.CfnProfile",
+            "name": "CfnProfile",
+            "service": "route53profiles",
+            "type": "CloudFormation Resource",
+          },
+        ],
+      }
+    `);
+	});
+
 	it("replaces / with _ in scoped package URLs and derives service correctly", () => {
 		const html = navGroups(
 			API_REFERENCE_GROUP +

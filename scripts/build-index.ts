@@ -31,7 +31,12 @@ export const parseIndex = (html: string): Index => {
 	const elements = $(".navGroups > div")
 		.toArray()
 		.flatMap((el) => {
-			const name = $(el).find("h3.navGroupCategoryTitle").first().text().trim();
+			const name = $(el)
+				.find("h3.navGroupCategoryTitle")
+				.first()
+				.text()
+				.trim()
+				.replace(/\p{No}/gu, "");
 
 			if (!name || BLOCKLIST.has(name)) return [];
 
