@@ -47,12 +47,12 @@ export const Search = () => {
 				className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-200"
 			/>
 
-			<p className="mt-3 text-xs text-gray-400">
-				{isFiltered ? `${results.length} result${results.length === 1 ? "" : "s"}` : ""}
+			<p className={`mt-3 text-xs text-gray-400 ${isFiltered ? "" : "invisible"}`}>
+				{results.length} result{results.length === 1 ? "" : "s"}
 			</p>
 
 			{results.length === 0 ? (
-				<p className="mt-6 text-sm text-gray-500">No results for &ldquo;{query}&rdquo;</p>
+				<p className="mt-2 text-sm text-gray-500">No results for &ldquo;{query}&rdquo;</p>
 			) : (
 				<ul className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white shadow-sm">
 					{results.map((el) => (
