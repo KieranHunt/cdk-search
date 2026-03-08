@@ -12,7 +12,6 @@ const navGroup = (title: string, href?: string) => `
     </ul>
   </div>`;
 
-// The "API Reference" group that always appears first in the real sidenav
 const API_REFERENCE_GROUP = navGroup(
 	"API Reference",
 	"/cdk/api/v2/docs/aws-construct-library.html",
@@ -23,12 +22,26 @@ describe("parseModules", () => {
 		expect(parseModules("")).toMatchInlineSnapshot(`[]`);
 	});
 
-	it("returns an empty array when only the API Reference group is present", () => {
+	it("excludes blocklisted groups", () => {
 		const html = navGroups(API_REFERENCE_GROUP);
 		expect(parseModules(html)).toMatchInlineSnapshot(`[]`);
 	});
 
-	it("skips the first group and parses a single module", () => {
+	it("excludes blocklisted groups regardless of position", () => {
+		const html = navGroups(
+			navGroup("aws-cdk-lib", "/cdk/api/v2/docs/aws-cdk-lib-readme.html") + API_REFERENCE_GROUP,
+		);
+		expect(parseModules(html)).toMatchInlineSnapshot(`
+      [
+        {
+          "name": "aws-cdk-lib",
+          "url": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib-readme.html",
+        },
+      ]
+    `);
+	});
+
+	it("parses a single module", () => {
 		const html = navGroups(
 			API_REFERENCE_GROUP + navGroup("aws-cdk-lib", "/cdk/api/v2/docs/aws-cdk-lib-readme.html"),
 		);
@@ -70,7 +83,6 @@ describe("parseModules", () => {
 	it("skips a group that has no <a> href", () => {
 		const html = navGroups(
 			API_REFERENCE_GROUP +
-				// Group with no link
 				`<div class="navGroup">
           <h3 class="navGroupCategoryTitle collapsible">aws-cdk-lib.aws_empty</h3>
           <ul></ul>

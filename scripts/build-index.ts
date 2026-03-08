@@ -6,6 +6,8 @@ import { load } from "cheerio";
 const SIDENAV_URL = "https://docs.aws.amazon.com/cdk/api/v2/_sidenav.lmth";
 const CDK_DOCS_BASE = "https://docs.aws.amazon.com";
 
+const BLOCKLIST = new Set(["API Reference"]);
+
 export interface Module {
 	name: string;
 	url: string;
@@ -15,14 +17,11 @@ export function parseModules(html: string): Module[] {
 	const $ = load(html);
 	const modules: Module[] = [];
 
-	$(".navGroups > div").each((index, el) => {
-		// The first div is "API Reference" — skip it
-		if (index === 0) return;
-
+	$(".navGroups > div").each((_index, el) => {
 		const name = $(el).find("h3.navGroupCategoryTitle").first().text().trim();
 		const href = $(el).find("a").first().attr("href");
 
-		if (!name || !href) return;
+		if (!name || !href || BLOCKLIST.has(name)) return;
 
 		modules.push({ name, url: `${CDK_DOCS_BASE}${href}` });
 	});
