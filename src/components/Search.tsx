@@ -47,6 +47,7 @@ export const Search = () => {
 				onChange={(e) => setQuery(e.target.value)}
 				placeholder="Search by name or service…"
 				className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-200"
+				autoFocus
 			/>
 
 			<p className={`mt-3 text-xs text-gray-400 ${isFiltered ? "" : "invisible"}`}>
