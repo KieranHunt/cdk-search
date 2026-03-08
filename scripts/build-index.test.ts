@@ -41,6 +41,18 @@ describe("deriveService", () => {
 	it("returns the name unchanged when there is no submodule", () => {
 		expect(deriveService("aws-cdk-lib")).toMatchInlineSnapshot(`"aws-cdk-lib"`);
 	});
+
+	it("strips @aws-cdk/ prefix, -alpha suffix, and aws- prefix from scoped package", () => {
+		expect(deriveService("@aws-cdk/aws-gamelift-alpha")).toMatchInlineSnapshot(`"gamelift"`);
+	});
+
+	it("strips @aws-cdk/ prefix, -alpha suffix, and aws- prefix for bedrock", () => {
+		expect(deriveService("@aws-cdk/aws-bedrock-alpha")).toMatchInlineSnapshot(`"bedrock"`);
+	});
+
+	it("strips @aws-cdk/ prefix and -alpha suffix when no aws- prefix", () => {
+		expect(deriveService("@aws-cdk/amplify-alpha")).toMatchInlineSnapshot(`"amplify"`);
+	});
 });
 
 describe("parseIndex", () => {
@@ -230,6 +242,29 @@ describe("parseIndex", () => {
             "name": "CfnSkill",
             "service": "alexa_ask",
             "type": "CloudFormation Resource",
+          },
+        ],
+      }
+    `);
+	});
+
+	it("replaces / with _ in scoped package URLs and derives service correctly", () => {
+		const html = navGroups(
+			API_REFERENCE_GROUP +
+				navGroup(
+					"@aws-cdk/aws-gamelift-alpha",
+					subNavGroup("Constructs", ["QueuedMatchmakingConfiguration"]),
+				),
+		);
+		expect(parseIndex(html)).toMatchInlineSnapshot(`
+      {
+        "elements": [
+          {
+            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-gamelift-alpha.QueuedMatchmakingConfiguration.html",
+            "id": "@aws-cdk/aws-gamelift-alpha.QueuedMatchmakingConfiguration",
+            "name": "QueuedMatchmakingConfiguration",
+            "service": "gamelift",
+            "type": "Construct",
           },
         ],
       }

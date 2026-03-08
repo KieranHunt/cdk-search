@@ -18,7 +18,12 @@ const SUBGROUP_TYPES: Partial<Record<string, Element["type"]>> = {
 };
 
 export const deriveService = (moduleName: string): string =>
-	moduleName.replace(/^aws-cdk-lib\./, "").replace(/^aws_/, "");
+	moduleName
+		.replace(/^aws-cdk-lib\./, "")
+		.replace(/^@aws-cdk\/aws-/, "")
+		.replace(/^@aws-cdk\//, "")
+		.replace(/-alpha$/, "")
+		.replace(/^aws_/, "");
 
 export const parseIndex = (html: string): Index => {
 	const $ = load(html);
@@ -47,12 +52,13 @@ export const parseIndex = (html: string): Index => {
 						.map((a) => {
 							const elementName = $(a).text().trim();
 							const id = `${name}.${elementName}`;
+							const urlSlug = `${name.replace("/", "_")}.${elementName}`;
 							return {
 								id,
 								name: elementName,
 								type,
 								service,
-								cdkReferenceDoc: `${CDK_DOCS_BASE}/${id}.html`,
+								cdkReferenceDoc: `${CDK_DOCS_BASE}/${urlSlug}.html`,
 							};
 						});
 				});
