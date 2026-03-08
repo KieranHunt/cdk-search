@@ -86,21 +86,23 @@ describe("parseIndex", () => {
 				),
 		);
 		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "name": "CfnExperimentTemplate",
-            "service": "fis",
-            "type": "CloudFormation Resource",
-          },
-          {
-            "name": "CfnTargetAccountConfiguration",
-            "service": "fis",
-            "type": "CloudFormation Resource",
-          },
-        ],
-      }
-    `);
+			{
+			  "elements": [
+			    {
+			      "module": "aws-cdk-lib.aws_fis",
+			      "name": "CfnExperimentTemplate",
+			      "service": "fis",
+			      "type": "CloudFormation Resource",
+			    },
+			    {
+			      "module": "aws-cdk-lib.aws_fis",
+			      "name": "CfnTargetAccountConfiguration",
+			      "service": "fis",
+			      "type": "CloudFormation Resource",
+			    },
+			  ],
+			}
+		`);
 	});
 
 	it("flattens CloudFormation Resources from multiple modules in order", () => {
@@ -116,26 +118,29 @@ describe("parseIndex", () => {
 				),
 		);
 		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "name": "CfnBucket",
-            "service": "s3",
-            "type": "CloudFormation Resource",
-          },
-          {
-            "name": "CfnBucketPolicy",
-            "service": "s3",
-            "type": "CloudFormation Resource",
-          },
-          {
-            "name": "CfnExperimentTemplate",
-            "service": "fis",
-            "type": "CloudFormation Resource",
-          },
-        ],
-      }
-    `);
+			{
+			  "elements": [
+			    {
+			      "module": "aws-cdk-lib.aws_s3",
+			      "name": "CfnBucket",
+			      "service": "s3",
+			      "type": "CloudFormation Resource",
+			    },
+			    {
+			      "module": "aws-cdk-lib.aws_s3",
+			      "name": "CfnBucketPolicy",
+			      "service": "s3",
+			      "type": "CloudFormation Resource",
+			    },
+			    {
+			      "module": "aws-cdk-lib.aws_fis",
+			      "name": "CfnExperimentTemplate",
+			      "service": "fis",
+			      "type": "CloudFormation Resource",
+			    },
+			  ],
+			}
+		`);
 	});
 
 	it("ignores non-CloudFormation Resources subgroups alongside CFN ones", () => {
@@ -149,16 +154,17 @@ describe("parseIndex", () => {
 				),
 		);
 		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "name": "CfnBucket",
-            "service": "s3",
-            "type": "CloudFormation Resource",
-          },
-        ],
-      }
-    `);
+			{
+			  "elements": [
+			    {
+			      "module": "aws-cdk-lib.aws_s3",
+			      "name": "CfnBucket",
+			      "service": "s3",
+			      "type": "CloudFormation Resource",
+			    },
+			  ],
+			}
+		`);
 	});
 
 	it("preserves underscores in service names without aws_ prefix", () => {
@@ -167,15 +173,16 @@ describe("parseIndex", () => {
 				navGroup("aws-cdk-lib.alexa_ask", subNavGroup("CloudFormation Resources", ["CfnSkill"])),
 		);
 		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "name": "CfnSkill",
-            "service": "alexa_ask",
-            "type": "CloudFormation Resource",
-          },
-        ],
-      }
-    `);
+			{
+			  "elements": [
+			    {
+			      "module": "aws-cdk-lib.alexa_ask",
+			      "name": "CfnSkill",
+			      "service": "alexa_ask",
+			      "type": "CloudFormation Resource",
+			    },
+			  ],
+			}
+		`);
 	});
 });

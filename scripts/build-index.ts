@@ -11,6 +11,7 @@ export interface Element {
 	name: string;
 	type: "CloudFormation Resource";
 	service: string;
+	module: string;
 }
 
 export interface Index {
@@ -47,6 +48,7 @@ export function parseIndex(html: string): Index {
 							name: $(a).text().trim(),
 							type: "CloudFormation Resource" as const,
 							service,
+							module: name,
 						}));
 				});
 		});
