@@ -4,11 +4,11 @@
 	"private": true,
 	"scripts": {
 		"dev": "bun ./index.html",
+		"prebuild": "tsc --noEmit && biome check src/ build.ts",
 		"build": "bun run build.ts",
 		"check": "tsc --noEmit",
 		"lint": "biome check src/ build.ts",
 		"lint:fix": "biome check --write src/ build.ts",
-		"ci": "bun run check && bun run lint && bun run build",
 		"prepare": "lefthook install"
 	},
 	"dependencies": {
