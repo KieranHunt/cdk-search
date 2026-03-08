@@ -7,5 +7,6 @@ export interface Element {
 }
 
 export interface Index {
+	generatedAt: string;
 	elements: Element[];
 }

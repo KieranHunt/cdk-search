@@ -69,7 +69,7 @@ export const parseIndex = (html: string): Index => {
 				});
 		});
 
-	return { elements };
+	return { generatedAt: new Date().toISOString().slice(0, 10), elements };
 };
 
 const main = async () => {

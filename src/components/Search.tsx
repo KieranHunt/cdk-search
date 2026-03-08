@@ -4,6 +4,7 @@ import indexData from "../../public/search-index.json";
 import type { Element } from "../types";
 
 const elements: Element[] = indexData.elements as Element[];
+const generatedAt: string = indexData.generatedAt as string;
 
 const SAMPLE_SIZE = 7;
 
@@ -71,6 +72,16 @@ export const Search = () => {
 						</li>
 					))}
 				</ul>
+			)}
+
+			{!isFiltered && (
+				<>
+					<hr className="my-6 border-gray-200" />
+					<p className="text-xs text-gray-400">
+						Search through all CDK constructs vended by aws-cdk-lib. Last updated @ {generatedAt}.{" "}
+						{elements.length.toLocaleString()} constructs are in the index.
+					</p>
+				</>
 			)}
 		</div>
 	);

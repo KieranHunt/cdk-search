@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { deriveService, parseIndex } from "./build-index";
 
@@ -56,10 +56,20 @@ describe("deriveService", () => {
 });
 
 describe("parseIndex", () => {
+	beforeAll(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("1992-05-22"));
+	});
+
+	afterAll(() => {
+		vi.useRealTimers();
+	});
+
 	it("returns empty elements for empty HTML", () => {
 		expect(parseIndex("")).toMatchInlineSnapshot(`
       {
         "elements": [],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -68,6 +78,7 @@ describe("parseIndex", () => {
 		expect(parseIndex(navGroups(API_REFERENCE_GROUP))).toMatchInlineSnapshot(`
       {
         "elements": [],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -83,6 +94,7 @@ describe("parseIndex", () => {
 		expect(parseIndex(html)).toMatchInlineSnapshot(`
       {
         "elements": [],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -116,6 +128,7 @@ describe("parseIndex", () => {
             "type": "CloudFormation Resource",
           },
         ],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -157,6 +170,7 @@ describe("parseIndex", () => {
             "type": "CloudFormation Resource",
           },
         ],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -189,6 +203,7 @@ describe("parseIndex", () => {
             "type": "CloudFormation Resource",
           },
         ],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -209,6 +224,7 @@ describe("parseIndex", () => {
             "type": "Construct",
           },
         ],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -224,6 +240,7 @@ describe("parseIndex", () => {
 		expect(parseIndex(html)).toMatchInlineSnapshot(`
       {
         "elements": [],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -244,6 +261,7 @@ describe("parseIndex", () => {
             "type": "CloudFormation Resource",
           },
         ],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -267,6 +285,7 @@ describe("parseIndex", () => {
             "type": "CloudFormation Resource",
           },
         ],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
@@ -290,6 +309,7 @@ describe("parseIndex", () => {
             "type": "Construct",
           },
         ],
+        "generatedAt": "1992-05-22",
       }
     `);
 	});
