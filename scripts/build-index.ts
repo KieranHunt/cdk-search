@@ -15,18 +15,17 @@ export interface Module {
 
 export function parseModules(html: string): Module[] {
 	const $ = load(html);
-	const modules: Module[] = [];
 
-	$(".navGroups > div").each((_index, el) => {
-		const name = $(el).find("h3.navGroupCategoryTitle").first().text().trim();
-		const href = $(el).find("a").first().attr("href");
+	return $(".navGroups > div")
+		.toArray()
+		.flatMap((el) => {
+			const name = $(el).find("h3.navGroupCategoryTitle").first().text().trim();
+			const href = $(el).find("a").first().attr("href");
 
-		if (!name || !href || BLOCKLIST.has(name)) return;
+			if (!name || !href || BLOCKLIST.has(name)) return [];
 
-		modules.push({ name, url: `${CDK_DOCS_BASE}${href}` });
-	});
-
-	return modules;
+			return [{ name, url: `${CDK_DOCS_BASE}${href}` }];
+		});
 }
 
 async function main() {

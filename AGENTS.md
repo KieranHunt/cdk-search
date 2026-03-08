@@ -1,1 +1,2 @@
 - **Commit after each logical unit of work.** Don't batch up multiple unrelated changes. After completing a feature, fix, or meaningful step, create a commit with a concise message.
+- **Favour functional-style code.** Prefer `map`, `filter`, `flatMap`, and `reduce` over imperative loops with mutation. Avoid `push` into a local array; derive new values instead.
