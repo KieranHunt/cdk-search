@@ -4,8 +4,12 @@ const VIEW_SIZE = 20;
 const CENTER = VIEW_SIZE / 2;
 
 const DOT_RADIUS = 1.3;
+const MIN_GAP = DOT_RADIUS * 2;
+const MAX_ATTEMPTS = 100;
 
-const randomDot = () => {
+type Dot = { cx: number; cy: number };
+
+const randomCandidate = (): Dot => {
 	const angle = Math.random() * 2 * Math.PI;
 	const radius = Math.random() * Math.random() * MAX_RADIUS;
 	return {
@@ -14,8 +18,25 @@ const randomDot = () => {
 	};
 };
 
+const overlaps = (candidate: Dot, placed: Dot[]): boolean =>
+	placed.some((d) => Math.hypot(candidate.cx - d.cx, candidate.cy - d.cy) < MIN_GAP);
+
+const generateDots = (): Dot[] => {
+	const placed: Dot[] = [];
+	for (let i = 0; i < DOT_COUNT; i++) {
+		for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+			const candidate = randomCandidate();
+			if (!overlaps(candidate, placed)) {
+				placed.push(candidate);
+				break;
+			}
+		}
+	}
+	return placed;
+};
+
 export const DotSwarm = () => {
-	const dots = Array.from({ length: DOT_COUNT }, randomDot);
+	const dots = generateDots();
 
 	return (
 		<svg
