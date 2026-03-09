@@ -11,14 +11,17 @@ export const Footer = () => (
 		<p>Last updated @ {generatedAt}</p>
 		<p className="text-right">
 			Made with <DotSwarm /> by{" "}
-			<a href="https://kieran.casa" className="no-underline text-slate-500">
+			<a href="https://kieran.casa" className="no-underline text-slate-500 hover:text-slate-300">
 				Kieran
 			</a>
 		</p>
 		<p>{elements.length.toLocaleString()} constructs in the index</p>
 		<p className="text-right">
 			View on{" "}
-			<a href="https://github.com/KieranHunt/cdk-search" className="no-underline">
+			<a
+				href="https://github.com/KieranHunt/cdk-search"
+				className="no-underline hover:text-slate-300"
+			>
 				<GitHubLogo /> Github
 			</a>
 		</p>

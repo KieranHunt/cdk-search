@@ -18,8 +18,8 @@ export const SearchIcon = ({ className }: { className?: string }) => (
 				fy="0%"
 				gradientUnits="objectBoundingBox"
 			>
-				<stop stopColor="#4d4d4d" />
-				<stop offset="1" />
+				<stop stopColor="#64748b" />
+				<stop offset="1" stopColor="#1e293b" />
 			</radialGradient>
 		</defs>
 		<svg
@@ -31,7 +31,7 @@ export const SearchIcon = ({ className }: { className?: string }) => (
 			viewBox="0 0 16 16"
 		>
 			<path
-				stroke="#e6e6e6"
+				stroke="#e2e8f0"
 				strokeLinecap="round"
 				strokeLinejoin="round"
 				strokeWidth="1.5"
