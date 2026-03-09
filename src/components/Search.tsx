@@ -88,14 +88,12 @@ export const Search = () => {
 								Kieran
 							</a>
 						</p>
-						<p>
-							<a
-								href="https://github.com/KieranHunt/cdk-search"
-								className="no-underline text-gray-400"
-							>
-								<GitHubLogo />
-							</a>
-						</p>
+						<a
+							href="https://github.com/KieranHunt/cdk-search"
+							className="no-underline text-gray-400"
+						>
+							<GitHubLogo />
+						</a>
 					</div>
 				</div>
 			)}
