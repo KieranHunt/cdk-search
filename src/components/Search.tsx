@@ -132,7 +132,7 @@ export const Search = () => {
 					id="search-results"
 					ref={listRef}
 					role="listbox"
-					className="mt-2 max-h-[25rem] divide-y divide-slate-800 overflow-y-auto rounded-lg"
+					className="mt-2 max-h-[25rem] divide-y divide-slate-800 overflow-x-hidden overflow-y-auto rounded-lg"
 				>
 					{results.map((el, i) => (
 						<li
@@ -147,7 +147,9 @@ export const Search = () => {
 							onClick={() => openInNewTab(el.cdkReferenceDoc)}
 						>
 							<div className="flex items-center justify-between px-4 py-3">
-								<span className="font-mono text-sm font-medium text-slate-100">{el.name}</span>
+								<span className="min-w-0 truncate font-mono text-sm font-medium text-slate-100">
+									{el.name}
+								</span>
 								<span
 									className={`ml-4 shrink-0 rounded-full px-2.5 py-0.5 text-xs ${
 										i === activeIndex
