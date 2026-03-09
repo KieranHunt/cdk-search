@@ -76,7 +76,7 @@ export const Search = () => {
 			)}
 
 			{!isFiltered && (
-				<div className="mt-6 pl-3 text-xs text-gray-400 flex justify-between">
+				<div className="mt-6 px-3 text-xs text-gray-400 flex justify-between">
 					<div>
 						<p>Last updated @ {generatedAt}.</p>
 						<p>{elements.length.toLocaleString()} constructs are in the index.</p>
