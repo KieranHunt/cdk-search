@@ -132,7 +132,7 @@ export const Search = () => {
 					id="search-results"
 					ref={listRef}
 					role="listbox"
-					className="mt-2 max-h-[calc(7*2.75rem+6px)] divide-y divide-slate-800 overflow-x-hidden overflow-y-auto rounded-lg"
+					className="mt-2 max-h-[calc(7*2.75rem+6px)] divide-y divide-slate-800 overflow-x-hidden overflow-y-auto rounded-lg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 				>
 					{results.map((el, i) => (
 						<li
