@@ -14,11 +14,11 @@ const noiseDataUrl = (() => {
 	const imageData = ctx.createImageData(size, size);
 	const data = imageData.data;
 	for (let i = 0; i < data.length; i += 4) {
-		if (Math.random() < 0.4) {
+		if (Math.random() < 0.15) {
 			data[i] = 255;
 			data[i + 1] = 255;
 			data[i + 2] = 255;
-			data[i + 3] = Math.floor(Math.random() * 55) + 5;
+			data[i + 3] = Math.floor(Math.random() * 18) + 3;
 		}
 	}
 	ctx.putImageData(imageData, 0, 0);
