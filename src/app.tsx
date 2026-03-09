@@ -7,7 +7,7 @@ import { SearchIcon } from "./components/SearchIcon";
 
 const App = () => (
 	<Layout>
-		<div className="w-full max-w-xl px-4">
+		<div className="w-full max-w-xl">
 			<div className="rounded-xl border border-slate-800 bg-slate-900 p-5 shadow-lg shadow-black/20">
 				<div className="mb-5 flex items-center justify-center gap-3 text-4xl">
 					<SearchIcon className="size-[0.75em] self-center translate-y-[0.05em]" />

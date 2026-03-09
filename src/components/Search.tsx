@@ -123,6 +123,10 @@ export const Search = () => {
 				{results.length} result{results.length === 1 ? "" : "s"}
 			</p>
 
+			{isFiltered && results.length === 0 && (
+				<p className="mt-4 text-center text-sm text-slate-500">No results found</p>
+			)}
+
 			{results.length > 0 && (
 				<ul
 					id="search-results"
@@ -144,7 +148,13 @@ export const Search = () => {
 						>
 							<div className="flex items-center justify-between px-4 py-3">
 								<span className="font-mono text-sm font-medium text-slate-100">{el.name}</span>
-								<span className="ml-4 shrink-0 rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-slate-400">
+								<span
+									className={`ml-4 shrink-0 rounded-full px-2.5 py-0.5 text-xs ${
+										i === activeIndex
+											? "bg-slate-700 text-slate-300"
+											: "bg-slate-800 text-slate-400"
+									}`}
+								>
 									{el.service}
 								</span>
 							</div>
