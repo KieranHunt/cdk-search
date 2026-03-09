@@ -38,32 +38,49 @@ export const Search = () => {
 			<label htmlFor="cdk-search" className="sr-only">
 				Search CDK resources
 			</label>
-			<input
-				id="cdk-search"
-				type="search"
-				value={query}
-				onChange={(e) => setQuery(e.target.value)}
-				placeholder="Search by name or service…"
-				className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-200"
-				autoFocus
-			/>
+			<div className="relative">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 16 16"
+					fill="none"
+					stroke="currentColor"
+					className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-500"
+					aria-hidden="true"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						strokeWidth="1.5"
+						d="m10 10 4.25 4.25m-3-7.75a4.75 4.75 0 1 1-9.5 0 4.75 4.75 0 0 1 9.5 0"
+					/>
+				</svg>
+				<input
+					id="cdk-search"
+					type="search"
+					value={query}
+					onChange={(e) => setQuery(e.target.value)}
+					placeholder="Search by name or service…"
+					className="w-full rounded-lg border border-slate-700 bg-slate-950 py-3 pl-10 pr-4 text-base text-slate-100 placeholder-slate-500 focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-600"
+					autoFocus
+				/>
+			</div>
 
-			<p className={`mt-3 text-xs text-gray-400 ${isFiltered ? "" : "invisible"}`}>
+			<p className={`mt-3 text-xs text-slate-400 ${isFiltered ? "" : "invisible"}`}>
 				{results.length} result{results.length === 1 ? "" : "s"}
 			</p>
 
 			{results.length > 0 && (
-				<ul className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white shadow-sm">
+				<ul className="mt-2 max-h-[25rem] divide-y divide-slate-800 overflow-y-auto rounded-lg">
 					{results.map((el) => (
 						<li key={el.id}>
 							<a
 								href={el.cdkReferenceDoc}
 								target="_blank"
 								rel="noreferrer"
-								className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+								className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-slate-800/50"
 							>
-								<span className="font-mono text-sm font-medium text-gray-900">{el.name}</span>
-								<span className="ml-4 shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-500">
+								<span className="font-mono text-sm font-medium text-slate-100">{el.name}</span>
+								<span className="ml-4 shrink-0 rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-slate-400">
 									{el.service}
 								</span>
 							</a>
