@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import indexData from "../../public/search-index.json";
 import type { Element } from "../types";
 import { DotSwarm } from "./DotSwarm";
+import { GitHubLogo } from "./GitHubLogo";
 
 const elements: Element[] = indexData.elements as Element[];
 const generatedAt: string = indexData.generatedAt as string;
@@ -87,6 +88,12 @@ export const Search = () => {
 								Kieran
 							</a>
 						</p>
+						<a
+							href="https://github.com/KieranHunt/cdk-search"
+							className="no-underline text-gray-400"
+						>
+							<GitHubLogo />
+						</a>
 					</div>
 				</div>
 			)}
