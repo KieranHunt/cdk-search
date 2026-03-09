@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import indexData from "../../public/search-index.json";
 import type { Element } from "../types";
@@ -18,8 +18,14 @@ export const fisherYates = <T,>(a: T[]): T[] => {
 const randomSample = (items: Element[], size: number): Element[] =>
 	fisherYates([...items]).slice(0, size);
 
+const openInNewTab = (url: string): void => {
+	window.open(url, "_blank", "noreferrer");
+};
+
 export const Search = () => {
 	const [query, setQuery] = useState("");
+	const [activeIndex, setActiveIndex] = useState(0);
+	const listRef = useRef<HTMLUListElement>(null);
 
 	const sample = useMemo(() => randomSample(elements, SAMPLE_SIZE), []);
 
@@ -33,8 +39,52 @@ export const Search = () => {
 
 	const isFiltered = query.trim() !== "";
 
+	// Reset active index when results change
+	useEffect(() => {
+		setActiveIndex(0);
+	}, [results]);
+
+	// Scroll the active item into view
+	useEffect(() => {
+		const list = listRef.current;
+		if (!list) return;
+		const item = list.children[activeIndex] as HTMLElement | undefined;
+		item?.scrollIntoView({ block: "nearest" });
+	}, [activeIndex]);
+
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent) => {
+			if (results.length === 0) return;
+
+			switch (e.key) {
+				case "ArrowDown": {
+					e.preventDefault();
+					setActiveIndex((prev) => (prev + 1) % results.length);
+					break;
+				}
+				case "ArrowUp": {
+					e.preventDefault();
+					setActiveIndex((prev) => (prev - 1 + results.length) % results.length);
+					break;
+				}
+				case "Enter": {
+					e.preventDefault();
+					const active = results[activeIndex];
+					if (active) openInNewTab(active.cdkReferenceDoc);
+					break;
+				}
+				case "Escape": {
+					e.preventDefault();
+					setQuery("");
+					break;
+				}
+			}
+		},
+		[results, activeIndex],
+	);
+
 	return (
-		<div>
+		<div onKeyDown={handleKeyDown}>
 			<label htmlFor="cdk-search" className="sr-only">
 				Search CDK resources
 			</label>
@@ -62,6 +112,10 @@ export const Search = () => {
 					placeholder="Search by name or service…"
 					className="w-full rounded-lg border border-slate-700 bg-slate-950 py-3 pl-10 pr-4 text-base text-slate-100 placeholder-slate-500 focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-600"
 					autoFocus
+					role="combobox"
+					aria-expanded={results.length > 0}
+					aria-controls="search-results"
+					aria-activedescendant={results.length > 0 ? `result-${activeIndex}` : undefined}
 				/>
 			</div>
 
@@ -70,20 +124,30 @@ export const Search = () => {
 			</p>
 
 			{results.length > 0 && (
-				<ul className="mt-2 max-h-[25rem] divide-y divide-slate-800 overflow-y-auto rounded-lg">
-					{results.map((el) => (
-						<li key={el.id}>
-							<a
-								href={el.cdkReferenceDoc}
-								target="_blank"
-								rel="noreferrer"
-								className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-slate-800/50"
-							>
+				<ul
+					id="search-results"
+					ref={listRef}
+					role="listbox"
+					className="mt-2 max-h-[25rem] divide-y divide-slate-800 overflow-y-auto rounded-lg"
+				>
+					{results.map((el, i) => (
+						<li
+							key={el.id}
+							id={`result-${i}`}
+							role="option"
+							aria-selected={i === activeIndex}
+							className={`cursor-pointer transition-colors ${
+								i === activeIndex ? "bg-slate-800" : "hover:bg-slate-800/50"
+							}`}
+							onMouseEnter={() => setActiveIndex(i)}
+							onClick={() => openInNewTab(el.cdkReferenceDoc)}
+						>
+							<div className="flex items-center justify-between px-4 py-3">
 								<span className="font-mono text-sm font-medium text-slate-100">{el.name}</span>
 								<span className="ml-4 shrink-0 rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-slate-400">
 									{el.service}
 								</span>
-							</a>
+							</div>
 						</li>
 					))}
 				</ul>
