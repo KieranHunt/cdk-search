@@ -5,8 +5,6 @@
     "": {
       "name": "cdk-search",
       "dependencies": {
-        "@fontsource-variable/ibm-plex-sans": "^5.2.8",
-        "@fontsource-variable/lilex": "^5.2.1",
         "@radix-ui/react-dialog": "^1",
         "@radix-ui/react-navigation-menu": "^1",
         "react": "^19",
@@ -79,10 +77,6 @@
     "@esbuild/win32-ia32": ["@esbuild/win32-ia32@0.27.3", "", { "os": "win32", "cpu": "ia32" }, "sha512-QLKSFeXNS8+tHW7tZpMtjlNb7HKau0QDpwm49u0vUp9y1WOF+PEzkU84y9GqYaAVW8aH8f3GcBck26jh54cX4Q=="],
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.27.3", "", { "os": "win32", "cpu": "x64" }, "sha512-4uJGhsxuptu3OcpVAzli+/gWusVGwZZHTlS63hh++ehExkVT8SgiEf7/uC/PclrPPkLhZqGgCTjd0VWLo6xMqA=="],
-
-    "@fontsource-variable/ibm-plex-sans": ["@fontsource-variable/ibm-plex-sans@5.2.8", "", {}, "sha512-n5PF2iFa0CZT0QYTPzxvZ39opC9LnU0zdoRccoADbs+Dtsd+lbXOZF7RNuIPHcQX1dKjF63sxnRImQIB5eD0Ag=="],
-
-    "@fontsource-variable/lilex": ["@fontsource-variable/lilex@5.2.1", "", {}, "sha512-l+cYywL7TTDffmiaZEPG98Er8eIJhqImV9ZSwOqxE3dC+oS8G/erBvIkQO6T87J+i7+9HJwr7gSVfcq7deMuAw=="],
 
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
