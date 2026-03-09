@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@import "@fontsource-variable/ibm-plex-sans";
+@import "@fontsource-variable/lilex";
+
+@theme {
+	--font-sans: "IBM Plex Sans Variable", sans-serif;
+	--font-mono: "Lilex Variable", monospace;
+}
