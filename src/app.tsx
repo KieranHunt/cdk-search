@@ -7,8 +7,24 @@ import { Search } from "./components/Search";
 const App = () => (
 	<Layout>
 		<div className="w-full max-w-xl">
+			<svg className="absolute h-0 w-0">
+				<filter id="noise">
+					<feTurbulence
+						type="fractalNoise"
+						baseFrequency="0.8"
+						numOctaves="4"
+						stitchTiles="stitch"
+					/>
+					<feComposite in="SourceGraphic" operator="in" />
+				</filter>
+			</svg>
+			<h1
+				className="mb-4 text-center text-8xl font-bold text-slate-500"
+				style={{ filter: "url(#noise)" }}
+			>
+				CDK Search
+			</h1>
 			<div className="rounded-xl border border-slate-800 bg-slate-900 p-5 shadow-lg shadow-black/20">
-				<h1 className="mb-5 text-center text-4xl font-bold text-slate-100">CDK Search</h1>
 				<Search />
 			</div>
 			<Footer />
