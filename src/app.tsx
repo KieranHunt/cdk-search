@@ -4,17 +4,38 @@ import { Footer } from "./components/Footer";
 import { Layout } from "./components/Layout";
 import { Search } from "./components/Search";
 
+const noiseDataUrl = (() => {
+	const size = 64;
+	const canvas = document.createElement("canvas");
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return "";
+	const imageData = ctx.createImageData(size, size);
+	const data = imageData.data;
+	for (let i = 0; i < data.length; i += 4) {
+		if (Math.random() < 0.4) {
+			data[i] = 255;
+			data[i + 1] = 255;
+			data[i + 2] = 255;
+			data[i + 3] = Math.floor(Math.random() * 55) + 5;
+		}
+	}
+	ctx.putImageData(imageData, 0, 0);
+	return canvas.toDataURL("image/png");
+})();
+
 const App = () => (
 	<Layout>
 		<div className="w-full max-w-xl">
 			<h1
 				className="mb-4 text-center text-8xl font-bold"
 				style={{
-					backgroundImage: `url("data:image/svg+xml,${encodeURIComponent("<svg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}"), linear-gradient(#64748b, #64748b)`,
+					backgroundImage: `url("${noiseDataUrl}"), linear-gradient(#64748b, #64748b)`,
+					backgroundSize: "64px 64px, 100% 100%",
 					WebkitBackgroundClip: "text",
 					WebkitTextFillColor: "transparent",
 					backgroundClip: "text",
-					backgroundBlendMode: "overlay",
 				}}
 			>
 				CDK Search
