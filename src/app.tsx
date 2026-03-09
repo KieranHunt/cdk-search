@@ -8,7 +8,7 @@ const App = () => (
 	<Layout>
 		<div className="max-w-2xl mx-auto px-6 py-16">
 			<div className="flex items-center justify-center gap-3 mb-8">
-				<SearchIcon className="size-8" />
+				<SearchIcon className="size-[1cap]" />
 				<h1 className="text-3xl font-bold text-gray-900">CDK search</h1>
 			</div>
 			<Search />
