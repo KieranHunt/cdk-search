@@ -151,7 +151,7 @@ export const Search = () => {
 									{el.name}
 								</span>
 								<span
-									className={`ml-4 shrink-0 rounded-full px-2.5 py-0.5 text-xs ${
+									className={`ml-4 shrink-0 rounded-full px-2.5 pb-0.5 text-xs ${
 										i === activeIndex
 											? "bg-slate-700 text-slate-300"
 											: "bg-slate-800 text-slate-400"
