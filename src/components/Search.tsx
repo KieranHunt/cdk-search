@@ -37,12 +37,14 @@ export const Search = () => {
 		);
 	}, [query, sample]);
 
+	const visibleResults = useMemo(() => results.slice(0, SAMPLE_SIZE), [results]);
+
 	const isFiltered = query.trim() !== "";
 
 	// Reset active index when results change
 	useEffect(() => {
 		setActiveIndex(0);
-	}, [results]);
+	}, [visibleResults]);
 
 	// Scroll the active item into view
 	useEffect(() => {
@@ -54,22 +56,22 @@ export const Search = () => {
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
-			if (results.length === 0) return;
+			if (visibleResults.length === 0) return;
 
 			switch (e.key) {
 				case "ArrowDown": {
 					e.preventDefault();
-					setActiveIndex((prev) => (prev + 1) % results.length);
+					setActiveIndex((prev) => (prev + 1) % visibleResults.length);
 					break;
 				}
 				case "ArrowUp": {
 					e.preventDefault();
-					setActiveIndex((prev) => (prev - 1 + results.length) % results.length);
+					setActiveIndex((prev) => (prev - 1 + visibleResults.length) % visibleResults.length);
 					break;
 				}
 				case "Enter": {
 					e.preventDefault();
-					const active = results[activeIndex];
+					const active = visibleResults[activeIndex];
 					if (active) openInNewTab(active.cdkReferenceDoc);
 					break;
 				}
@@ -80,7 +82,7 @@ export const Search = () => {
 				}
 			}
 		},
-		[results, activeIndex],
+		[visibleResults, activeIndex],
 	);
 
 	return (
@@ -113,9 +115,9 @@ export const Search = () => {
 					className="w-full rounded-lg border border-slate-700 bg-slate-950 py-3 pl-10 pr-4 text-base text-slate-100 placeholder-slate-500 focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-600"
 					autoFocus
 					role="combobox"
-					aria-expanded={results.length > 0}
+					aria-expanded={visibleResults.length > 0}
 					aria-controls="search-results"
-					aria-activedescendant={results.length > 0 ? `result-${activeIndex}` : undefined}
+					aria-activedescendant={visibleResults.length > 0 ? `result-${activeIndex}` : undefined}
 				/>
 			</div>
 
@@ -127,14 +129,14 @@ export const Search = () => {
 				<p className="mt-4 text-center text-sm text-slate-500">No results found</p>
 			)}
 
-			{results.length > 0 && (
+			{visibleResults.length > 0 && (
 				<ul
 					id="search-results"
 					ref={listRef}
 					role="listbox"
-					className="mt-2 max-h-[25rem] divide-y divide-slate-800 overflow-x-hidden overflow-y-auto rounded-lg"
+					className="mt-2 divide-y divide-slate-800 overflow-x-hidden rounded-lg"
 				>
-					{results.map((el, i) => (
+					{visibleResults.map((el, i) => (
 						<li
 							key={el.id}
 							id={`result-${i}`}
