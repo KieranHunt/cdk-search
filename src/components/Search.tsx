@@ -76,25 +76,21 @@ export const Search = () => {
 			)}
 
 			{!isFiltered && (
-				<div className="mt-6 px-3 text-xs text-gray-400 flex justify-between">
-					<div>
-						<p>Last updated @ {generatedAt}.</p>
-						<p>{elements.length.toLocaleString()} constructs are in the index.</p>
-					</div>
-					<div className="text-right">
-						<p>
-							Made with <DotSwarm /> by{" "}
-							<a href="https://kieran.casa" className="no-underline text-gray-400">
-								Kieran
-							</a>
-						</p>
-						<a
-							href="https://github.com/KieranHunt/cdk-search"
-							className="no-underline text-gray-400"
-						>
-							<GitHubLogo />
+				<div className="mt-6 px-3 text-xs text-gray-400 grid grid-cols-2 gap-x-4">
+					<p>Last updated @ {generatedAt}.</p>
+					<p className="text-right">
+						Made with <DotSwarm /> by{" "}
+						<a href="https://kieran.casa" className="no-underline text-gray-400">
+							Kieran
 						</a>
-					</div>
+					</p>
+					<p>{elements.length.toLocaleString()} constructs are in the index.</p>
+					<p className="text-right">
+						View on{" "}
+						<a href="https://github.com/KieranHunt/cdk-search" className="no-underline">
+							<GitHubLogo /> Github
+						</a>
+					</p>
 				</div>
 			)}
 		</div>
