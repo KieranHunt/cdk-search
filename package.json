@@ -17,7 +17,6 @@
   "dependencies": {
     "@radix-ui/react-dialog": "^1",
     "@radix-ui/react-navigation-menu": "^1",
-    "@tldraw/assets": "^4.4.1",
     "react": "^19",
     "react-dom": "^19",
     "tailwindcss": "^4.2.1"
