@@ -16,7 +16,7 @@ export const AsciiTitle = () => (
 	<div className="mb-8 flex w-full flex-col items-center">
 		<h1 className="sr-only">CDK Search</h1>
 		<pre
-			className="select-none whitespace-pre font-mono text-[5px] leading-[125%] tracking-[-0.5px] text-indigo-300 sm:text-[8px] md:text-[10px] lg:text-[11px]"
+			className="select-none whitespace-pre font-mono text-[5px] leading-none tracking-[-0.5px] text-indigo-300 sm:text-[8px] md:text-[10px] lg:text-[11px]"
 			style={{ textShadow: glowShadow }}
 			aria-hidden="true"
 		>
