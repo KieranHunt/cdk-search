@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { deriveService, parseIndex } from "./build-index";
+import { deriveService, enrichElements, parseIndex } from "./build-index";
 
 // Helpers to build fixture HTML
 
@@ -312,5 +312,94 @@ describe("parseIndex", () => {
         "generatedAt": "1992-05-22",
       }
     `);
+	});
+});
+
+describe("enrichElements", () => {
+	it("adds description to elements with a matching entry", () => {
+		const elements = [
+			{
+				id: "aws-cdk-lib.aws_s3.Bucket",
+				name: "Bucket",
+				type: "Construct" as const,
+				service: "s3",
+				cdkReferenceDoc:
+					"https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html",
+			},
+		];
+		const descriptions = new Map([
+			["aws-cdk-lib.aws_s3.Bucket", "An S3 bucket with associated policy objects."],
+		]);
+
+		expect(enrichElements(elements, descriptions)).toMatchInlineSnapshot(`
+      [
+        {
+          "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html",
+          "description": "An S3 bucket with associated policy objects.",
+          "id": "aws-cdk-lib.aws_s3.Bucket",
+          "name": "Bucket",
+          "service": "s3",
+          "type": "Construct",
+        },
+      ]
+    `);
+	});
+
+	it("omits description for elements without a matching entry", () => {
+		const elements = [
+			{
+				id: "@aws-cdk/aws-gamelift-alpha.QueuedMatchmakingConfiguration",
+				name: "QueuedMatchmakingConfiguration",
+				type: "Construct" as const,
+				service: "gamelift",
+				cdkReferenceDoc:
+					"https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-gamelift-alpha.QueuedMatchmakingConfiguration.html",
+			},
+		];
+		const descriptions = new Map<string, string>();
+
+		expect(enrichElements(elements, descriptions)).toMatchInlineSnapshot(`
+      [
+        {
+          "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-gamelift-alpha.QueuedMatchmakingConfiguration.html",
+          "id": "@aws-cdk/aws-gamelift-alpha.QueuedMatchmakingConfiguration",
+          "name": "QueuedMatchmakingConfiguration",
+          "service": "gamelift",
+          "type": "Construct",
+        },
+      ]
+    `);
+	});
+
+	it("enriches matching elements and leaves unmatched ones unchanged", () => {
+		const elements = [
+			{
+				id: "aws-cdk-lib.aws_s3.Bucket",
+				name: "Bucket",
+				type: "Construct" as const,
+				service: "s3",
+				cdkReferenceDoc:
+					"https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html",
+			},
+			{
+				id: "@aws-cdk/aws-gamelift-alpha.QueuedMatchmakingConfiguration",
+				name: "QueuedMatchmakingConfiguration",
+				type: "Construct" as const,
+				service: "gamelift",
+				cdkReferenceDoc:
+					"https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-gamelift-alpha.QueuedMatchmakingConfiguration.html",
+			},
+		];
+		const descriptions = new Map([
+			["aws-cdk-lib.aws_s3.Bucket", "An S3 bucket with associated policy objects."],
+		]);
+
+		const result = enrichElements(elements, descriptions);
+		expect(result[0].description).toBe("An S3 bucket with associated policy objects.");
+		expect(result[1]).not.toHaveProperty("description");
+	});
+
+	it("returns empty array for empty elements", () => {
+		expect(enrichElements([], new Map())).toEqual([]);
 	});
 });

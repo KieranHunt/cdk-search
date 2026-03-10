@@ -4,6 +4,7 @@ export interface Element {
 	type: "CloudFormation Resource" | "Construct";
 	service: string;
 	cdkReferenceDoc: string;
+	description?: string;
 }
 
 export interface Index {

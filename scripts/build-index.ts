@@ -1,12 +1,15 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { gunzipSync } from "node:zlib";
 
 import { load } from "cheerio";
 
 import type { Element, Index } from "../src/types";
 
 const SIDENAV_URL = "https://docs.aws.amazon.com/cdk/api/v2/_sidenav.lmth";
+
+const JSII_URL = "https://unpkg.com/aws-cdk-lib@latest/.jsii.gz";
 
 const CDK_DOCS_BASE = "https://docs.aws.amazon.com/cdk/api/v2/docs";
 
@@ -72,15 +75,54 @@ export const parseIndex = (html: string): Index => {
 	return { generatedAt: new Date().toISOString().slice(0, 10), elements };
 };
 
-const main = async () => {
-	console.log(`Fetching sidenav from ${SIDENAV_URL}...`);
-	const response = await fetch(SIDENAV_URL);
+interface JsiiType {
+	docs?: { summary?: string };
+}
+
+interface JsiiAssembly {
+	types?: Record<string, JsiiType>;
+}
+
+export const fetchDescriptions = async (): Promise<Map<string, string>> => {
+	console.log(`Fetching JSII assembly from ${JSII_URL}...`);
+	const response = await fetch(JSII_URL);
 	if (!response.ok) {
-		throw new Error(`Failed to fetch sidenav: ${response.status} ${response.statusText}`);
+		throw new Error(`Failed to fetch JSII assembly: ${response.status} ${response.statusText}`);
 	}
 
-	const html = await response.text();
+	const compressed = Buffer.from(await response.arrayBuffer());
+	const json = gunzipSync(compressed).toString("utf-8");
+	const assembly: JsiiAssembly = JSON.parse(json);
+
+	return new Map(
+		Object.entries(assembly.types ?? {}).flatMap(([fqn, type]) => {
+			const summary = type.docs?.summary;
+			return summary ? [[fqn, summary] as const] : [];
+		}),
+	);
+};
+
+export const enrichElements = (elements: Element[], descriptions: Map<string, string>): Element[] =>
+	elements.map((element) => {
+		const description = descriptions.get(element.id);
+		return description ? { ...element, description } : element;
+	});
+
+const main = async () => {
+	const [html, descriptions] = await Promise.all([
+		fetch(SIDENAV_URL).then((response) => {
+			if (!response.ok) {
+				throw new Error(`Failed to fetch sidenav: ${response.status} ${response.statusText}`);
+			}
+			return response.text();
+		}),
+		fetchDescriptions(),
+	]);
+
+	console.log(`Fetched ${descriptions.size} descriptions from JSII assembly`);
+
 	const index = parseIndex(html);
+	index.elements = enrichElements(index.elements, descriptions);
 
 	const scriptDir = dirname(fileURLToPath(import.meta.url));
 	const outDir = join(scriptDir, "..", "public");
