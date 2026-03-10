@@ -1,37 +1,37 @@
 {
-	"name": "cdk-search",
-	"version": "0.1.0",
-	"private": true,
-	"scripts": {
-		"dev": "bun ./index.html",
-		"prebuild": "bun run build:index && bun run check && bun run lint && bun run test",
-		"build": "bun run build.ts",
-		"build:index": "bun run scripts/build-index.ts",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"check": "tsc --noEmit",
-		"lint": "oxlint src/ scripts/ build.ts vitest.config.ts && oxfmt --check src/ scripts/ build.ts vitest.config.ts",
-		"lint:fix": "oxlint --fix src/ scripts/ build.ts vitest.config.ts && oxfmt src/ scripts/ build.ts vitest.config.ts",
-		"prepare": "lefthook install"
-	},
-	"dependencies": {
-		"@radix-ui/react-dialog": "^1",
-		"@radix-ui/react-navigation-menu": "^1",
-		"@tldraw/assets": "^4.4.1",
-		"react": "^19",
-		"react-dom": "^19",
-		"tailwindcss": "^4.2.1"
-	},
-	"devDependencies": {
-		"@types/bun": "^1.3.10",
-		"@types/react": "^19",
-		"@types/react-dom": "^19",
-		"bun-plugin-tailwind": "latest",
-		"cheerio": "^1.2.0",
-		"lefthook": "^2.1.3",
-		"oxfmt": "^0.36.0",
-		"oxlint": "^1.51.0",
-		"typescript": "^5.9.3",
-		"vitest": "^4.0.18"
-	}
+  "name": "cdk-search",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun ./index.html",
+    "prebuild": "bun run check && bun run lint && bun run test",
+    "build": "bun run build:index && bun run build.ts",
+    "build:index": "bun run scripts/build-index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "tsc --noEmit",
+    "lint": "oxlint src/ scripts/ build.ts vitest.config.ts && oxfmt --check src/ scripts/ build.ts vitest.config.ts",
+    "lint:fix": "oxlint --fix src/ scripts/ build.ts vitest.config.ts && oxfmt src/ scripts/ build.ts vitest.config.ts",
+    "prepare": "lefthook install"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1",
+    "@radix-ui/react-navigation-menu": "^1",
+    "@tldraw/assets": "^4.4.1",
+    "react": "^19",
+    "react-dom": "^19",
+    "tailwindcss": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.10",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "bun-plugin-tailwind": "latest",
+    "cheerio": "^1.2.0",
+    "lefthook": "^2.1.3",
+    "oxfmt": "^0.36.0",
+    "oxlint": "^1.51.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
 }
