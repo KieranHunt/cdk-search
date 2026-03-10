@@ -110,7 +110,7 @@ export const Search = () => {
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
 					placeholder="Search by name or service…"
-					className="w-full rounded-lg border border-slate-700 bg-slate-950 py-3 pl-10 pr-4 text-base text-slate-100 placeholder-slate-500 focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-600"
+					className="w-full rounded-lg border border-slate-700 bg-slate-950 py-3 pl-10 pr-4 text-base text-slate-100 placeholder-slate-500 focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-600 [&::-webkit-search-cancel-button]:appearance-none"
 					autoFocus
 					role="combobox"
 					aria-expanded={results.length > 0}
