@@ -140,7 +140,7 @@ export const Search = () => {
 							id={`result-${i}`}
 							role="option"
 							aria-selected={i === activeIndex}
-							className={`cursor-pointer transition-colors ${
+							className={`cursor-pointer ${
 								i === activeIndex ? "bg-slate-800" : "hover:bg-slate-800/50"
 							}`}
 							onMouseEnter={() => setActiveIndex(i)}
