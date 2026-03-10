@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { deriveService, enrichElements, parseIndex } from "./build-index";
+import { deriveService, enrichElements, parseIndex, stripMarkdown } from "./build-index";
 
 // Helpers to build fixture HTML
 
@@ -401,5 +401,37 @@ describe("enrichElements", () => {
 
 	it("returns empty array for empty elements", () => {
 		expect(enrichElements([], new Map())).toEqual([]);
+	});
+});
+
+describe("stripMarkdown", () => {
+	it("returns plain text unchanged", () => {
+		expect(stripMarkdown("An S3 bucket with associated policy objects.")).toBe(
+			"An S3 bucket with associated policy objects.",
+		);
+	});
+
+	it("strips markdown links, keeping the link text", () => {
+		expect(
+			stripMarkdown(
+				"A public key that you can use with [signed URLs and signed cookies](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/PrivateContent.html) .",
+			),
+		).toBe("A public key that you can use with signed URLs and signed cookies .");
+	});
+
+	it("strips backtick-wrapped code", () => {
+		expect(stripMarkdown("The `AWS::S3::Bucket` resource creates an Amazon S3 bucket.")).toBe(
+			"The AWS::S3::Bucket resource creates an Amazon S3 bucket.",
+		);
+	});
+
+	it("strips emphasis asterisks", () => {
+		expect(stripMarkdown("Creates or updates an Evidently *experiment* .")).toBe(
+			"Creates or updates an Evidently experiment .",
+		);
+	});
+
+	it("strips blockquote markers", () => {
+		expect(stripMarkdown("> AWS Chatbot is now renamed.")).toBe("AWS Chatbot is now renamed.");
 	});
 });

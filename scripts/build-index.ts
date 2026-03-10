@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 
 import { load } from "cheerio";
+import removeMd from "remove-markdown";
 
 import type { Element, Index } from "../src/types";
 
@@ -83,6 +84,8 @@ interface JsiiAssembly {
 	types?: Record<string, JsiiType>;
 }
 
+export const stripMarkdown = (text: string): string => removeMd(text);
+
 export const fetchDescriptions = async (): Promise<Map<string, string>> => {
 	console.log(`Fetching JSII assembly from ${JSII_URL}...`);
 	const response = await fetch(JSII_URL);
@@ -97,7 +100,7 @@ export const fetchDescriptions = async (): Promise<Map<string, string>> => {
 	return new Map(
 		Object.entries(assembly.types ?? {}).flatMap(([fqn, type]) => {
 			const summary = type.docs?.summary;
-			return summary ? [[fqn, summary] as const] : [];
+			return summary ? [[fqn, stripMarkdown(summary)] as const] : [];
 		}),
 	);
 };
