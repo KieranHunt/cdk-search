@@ -7,7 +7,7 @@ const elements: Element[] = indexData.elements as Element[];
 const generatedAt: string = indexData.generatedAt as string;
 
 export const Footer = () => (
-	<div className="mt-4 px-3 text-xs text-slate-500 grid grid-cols-2 gap-x-4">
+	<div className="mt-4 px-3 text-xs text-slate-400 grid grid-cols-2 gap-x-4">
 		<p>Last updated @ {generatedAt}</p>
 		<p className="text-right">
 			Made with <DotSwarm /> by{" "}
