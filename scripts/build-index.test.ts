@@ -7,26 +7,11 @@ import {
 	isConstruct,
 	stripMarkdown,
 } from "./build-index";
+import type { JsiiType } from "./download-jsii";
 
 // ── Helpers to build JSII fixture data ───────────────────────────────
 
-type PartialType = {
-	fqn: string;
-	name: string;
-	kind?: "class" | "enum" | "interface";
-	namespace?: string;
-	assembly?: string;
-	base?: string;
-	abstract?: boolean;
-	docs?: {
-		summary?: string;
-		stability?: string;
-		deprecated?: string;
-		custom?: Record<string, string>;
-	};
-};
-
-const jsiiType = (overrides: PartialType) => ({
+const jsiiType = (overrides: Partial<JsiiType> & Pick<JsiiType, "fqn" | "name">) => ({
 	kind: "class" as const,
 	assembly: "aws-cdk-lib",
 	...overrides,
