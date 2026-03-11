@@ -58,7 +58,7 @@ const main = async () => {
 	const outFile = join(outDir, "jsii.json");
 
 	await mkdir(outDir, { recursive: true });
-	await writeFile(outFile, JSON.stringify(assembly));
+	await writeFile(outFile, JSON.stringify(assembly, null, 2));
 
 	console.log(`Wrote validated assembly to ${outFile}`);
 };
