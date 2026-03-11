@@ -1,45 +1,14 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { gunzipSync } from "node:zlib";
 
 import removeMd from "remove-markdown";
-import { z } from "zod";
 
 import type { Element, Index } from "../src/types";
-
-const JSII_URL = "https://unpkg.com/aws-cdk-lib@latest/.jsii.gz";
+import { JsiiAssemblySchema } from "./download-jsii";
+import type { JsiiAssembly, JsiiType } from "./download-jsii";
 
 const CDK_DOCS_BASE = "https://docs.aws.amazon.com/cdk/api/v2/docs";
-
-// ── Zod schemas for the JSII assembly ────────────────────────────────
-
-const JsiiDocsSchema = z.object({
-	summary: z.string().optional(),
-	stability: z.string().optional(),
-	deprecated: z.string().optional(),
-	custom: z.record(z.string(), z.string()).optional(),
-});
-
-const JsiiTypeSchema = z.object({
-	fqn: z.string(),
-	name: z.string(),
-	kind: z.enum(["class", "enum", "interface"]),
-	namespace: z.string().optional(),
-	assembly: z.string(),
-	base: z.string().optional(),
-	abstract: z.boolean().optional(),
-	docs: JsiiDocsSchema.optional(),
-});
-
-const JsiiAssemblySchema = z.object({
-	name: z.string(),
-	version: z.string(),
-	types: z.record(z.string(), JsiiTypeSchema).optional(),
-});
-
-type JsiiType = z.infer<typeof JsiiTypeSchema>;
-type JsiiAssembly = z.infer<typeof JsiiAssemblySchema>;
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -104,24 +73,16 @@ export const buildElements = (assembly: JsiiAssembly): Element[] => {
 	});
 };
 
-// ── Fetch + validate ─────────────────────────────────────────────────
-
-export const fetchAssembly = async (): Promise<JsiiAssembly> => {
-	console.log(`Fetching JSII assembly from ${JSII_URL}...`);
-	const response = await fetch(JSII_URL);
-	if (!response.ok) {
-		throw new Error(`Failed to fetch JSII assembly: ${response.status} ${response.statusText}`);
-	}
-
-	const compressed = Buffer.from(await response.arrayBuffer());
-	const json = gunzipSync(compressed).toString("utf-8");
-	return JsiiAssemblySchema.parse(JSON.parse(json));
-};
-
 // ── Main ─────────────────────────────────────────────────────────────
 
 const main = async () => {
-	const assembly = await fetchAssembly();
+	const scriptDir = dirname(fileURLToPath(import.meta.url));
+	const publicDir = join(scriptDir, "..", "public");
+	const jsiiFile = join(publicDir, "jsii.json");
+
+	console.log(`Reading JSII assembly from ${jsiiFile}...`);
+	const json = await readFile(jsiiFile, "utf-8");
+	const assembly = JsiiAssemblySchema.parse(JSON.parse(json));
 
 	console.log(
 		`Parsed JSII assembly: ${assembly.name}@${assembly.version} with ${Object.keys(assembly.types ?? {}).length} types`,
@@ -134,11 +95,7 @@ const main = async () => {
 		elements,
 	};
 
-	const scriptDir = dirname(fileURLToPath(import.meta.url));
-	const outDir = join(scriptDir, "..", "public");
-	const outFile = join(outDir, "search-index.json");
-
-	await mkdir(outDir, { recursive: true });
+	const outFile = join(publicDir, "search-index.json");
 	await writeFile(outFile, JSON.stringify(index, null, 2));
 
 	console.log(`Wrote ${elements.length} elements to ${outFile}`);
