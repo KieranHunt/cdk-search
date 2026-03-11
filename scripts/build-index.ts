@@ -3,90 +3,110 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 
-import { load } from "cheerio";
 import removeMd from "remove-markdown";
+import { z } from "zod";
 
 import type { Element, Index } from "../src/types";
-
-const SIDENAV_URL = "https://docs.aws.amazon.com/cdk/api/v2/_sidenav.lmth";
 
 const JSII_URL = "https://unpkg.com/aws-cdk-lib@latest/.jsii.gz";
 
 const CDK_DOCS_BASE = "https://docs.aws.amazon.com/cdk/api/v2/docs";
 
-const BLOCKLIST = new Set(["API Reference"]);
+// ── Zod schemas for the JSII assembly ────────────────────────────────
 
-const SUBGROUP_TYPES: Partial<Record<string, Element["type"]>> = {
-	"CloudFormation Resources": "CloudFormation Resource",
-	Constructs: "Construct",
-};
+const JsiiDocsSchema = z.object({
+	summary: z.string().optional(),
+	stability: z.string().optional(),
+	deprecated: z.string().optional(),
+	custom: z.record(z.string(), z.string()).optional(),
+});
 
-export const deriveService = (moduleName: string): string =>
-	moduleName
-		.replace(/^aws-cdk-lib\./, "")
-		.replace(/^@aws-cdk\/aws-/, "")
-		.replace(/^@aws-cdk\//, "")
-		.replace(/-alpha$/, "")
-		.replace(/^aws_/, "");
+const JsiiTypeSchema = z.object({
+	fqn: z.string(),
+	name: z.string(),
+	kind: z.enum(["class", "enum", "interface"]),
+	namespace: z.string().optional(),
+	assembly: z.string(),
+	base: z.string().optional(),
+	abstract: z.boolean().optional(),
+	docs: JsiiDocsSchema.optional(),
+});
 
-export const parseIndex = (html: string): Index => {
-	const $ = load(html);
+const JsiiAssemblySchema = z.object({
+	name: z.string(),
+	version: z.string(),
+	types: z.record(z.string(), JsiiTypeSchema).optional(),
+});
 
-	const elements = $(".navGroups > div")
-		.toArray()
-		.flatMap((el) => {
-			const name = $(el)
-				.find("h3.navGroupCategoryTitle")
-				.first()
-				.text()
-				.trim()
-				.replace(/\p{No}/gu, "");
+type JsiiType = z.infer<typeof JsiiTypeSchema>;
+type JsiiAssembly = z.infer<typeof JsiiAssemblySchema>;
 
-			if (!name || BLOCKLIST.has(name)) return [];
-
-			const service = deriveService(name);
-
-			return $(el)
-				.find("h4.navGroupSubcategoryTitle")
-				.toArray()
-				.flatMap((h4) => {
-					const type = SUBGROUP_TYPES[$(h4).text().trim()];
-
-					if (!type) return [];
-
-					return $(h4)
-						.next("ul")
-						.find("li a")
-						.toArray()
-						.map((a) => {
-							const elementName = $(a).text().trim();
-							const id = `${name}.${elementName}`;
-							const urlSlug = `${name.replace("/", "_")}.${elementName}`;
-							return {
-								id,
-								name: elementName,
-								type,
-								service,
-								cdkReferenceDoc: `${CDK_DOCS_BASE}/${urlSlug}.html`,
-							};
-						});
-				});
-		});
-
-	return { generatedAt: new Date().toISOString().slice(0, 10), elements };
-};
-
-interface JsiiType {
-	docs?: { summary?: string };
-}
-
-interface JsiiAssembly {
-	types?: Record<string, JsiiType>;
-}
+// ── Helpers ──────────────────────────────────────────────────────────
 
 export const stripMarkdown = (text: string): string => removeMd(text);
 
-export const fetchDescriptions = async (): Promise<Map<string, string>> => {
+export const deriveService = (moduleName: string): string =>
+	moduleName.replace(/^aws-cdk-lib\./, "").replace(/^aws_/, "");
+
+const CONSTRUCT_ROOT = "constructs.Construct";
+
+/** Memoised check: does the class at `fqn` extend `constructs.Construct`? */
+export const isConstruct = (
+	fqn: string,
+	types: Record<string, JsiiType>,
+	cache: Map<string, boolean> = new Map(),
+): boolean => {
+	const cached = cache.get(fqn);
+	if (cached !== undefined) return cached;
+
+	if (fqn === CONSTRUCT_ROOT) {
+		cache.set(fqn, true);
+		return true;
+	}
+
+	const base = types[fqn]?.base;
+	const result = base ? isConstruct(base, types, cache) : false;
+	cache.set(fqn, result);
+	return result;
+};
+
+/** Is this type an L1 CloudFormation resource wrapper? */
+export const isCfnResource = (type: JsiiType): boolean =>
+	Boolean(type.docs?.custom?.cloudformationResource);
+
+// ── Core: build elements from the JSII assembly ─────────────────────
+
+export const buildElements = (assembly: JsiiAssembly): Element[] => {
+	const types = assembly.types ?? {};
+	const cache = new Map<string, boolean>();
+
+	return Object.values(types).flatMap((type): Element[] => {
+		if (type.kind !== "class") return [];
+		if (type.abstract) return [];
+		if (!isConstruct(type.fqn, types, cache)) return [];
+
+		const cfnResource = isCfnResource(type);
+		const moduleName = type.namespace ? `${type.assembly}.${type.namespace}` : type.assembly;
+
+		const urlSlug = `${moduleName.replace("/", "_")}.${type.name}`;
+		const description = type.docs?.summary ? stripMarkdown(type.docs.summary) : undefined;
+
+		return [
+			{
+				id: type.fqn,
+				name: type.name,
+				type: cfnResource ? "CloudFormation Resource" : "Construct",
+				service: deriveService(moduleName),
+				cdkReferenceDoc: `${CDK_DOCS_BASE}/${urlSlug}.html`,
+				...(description && { description }),
+			},
+		];
+	});
+};
+
+// ── Fetch + validate ─────────────────────────────────────────────────
+
+export const fetchAssembly = async (): Promise<JsiiAssembly> => {
 	console.log(`Fetching JSII assembly from ${JSII_URL}...`);
 	const response = await fetch(JSII_URL);
 	if (!response.ok) {
@@ -95,37 +115,24 @@ export const fetchDescriptions = async (): Promise<Map<string, string>> => {
 
 	const compressed = Buffer.from(await response.arrayBuffer());
 	const json = gunzipSync(compressed).toString("utf-8");
-	const assembly: JsiiAssembly = JSON.parse(json);
-
-	return new Map(
-		Object.entries(assembly.types ?? {}).flatMap(([fqn, type]) => {
-			const summary = type.docs?.summary;
-			return summary ? [[fqn, stripMarkdown(summary)] as const] : [];
-		}),
-	);
+	return JsiiAssemblySchema.parse(JSON.parse(json));
 };
 
-export const enrichElements = (elements: Element[], descriptions: Map<string, string>): Element[] =>
-	elements.map((element) => {
-		const description = descriptions.get(element.id);
-		return description ? { ...element, description } : element;
-	});
+// ── Main ─────────────────────────────────────────────────────────────
 
 const main = async () => {
-	const [html, descriptions] = await Promise.all([
-		fetch(SIDENAV_URL).then((response) => {
-			if (!response.ok) {
-				throw new Error(`Failed to fetch sidenav: ${response.status} ${response.statusText}`);
-			}
-			return response.text();
-		}),
-		fetchDescriptions(),
-	]);
+	const assembly = await fetchAssembly();
 
-	console.log(`Fetched ${descriptions.size} descriptions from JSII assembly`);
+	console.log(
+		`Parsed JSII assembly: ${assembly.name}@${assembly.version} with ${Object.keys(assembly.types ?? {}).length} types`,
+	);
 
-	const index = parseIndex(html);
-	index.elements = enrichElements(index.elements, descriptions);
+	const elements = buildElements(assembly);
+
+	const index: Index = {
+		generatedAt: new Date().toISOString().slice(0, 10),
+		elements,
+	};
 
 	const scriptDir = dirname(fileURLToPath(import.meta.url));
 	const outDir = join(scriptDir, "..", "public");
@@ -134,7 +141,7 @@ const main = async () => {
 	await mkdir(outDir, { recursive: true });
 	await writeFile(outFile, JSON.stringify(index, null, 2));
 
-	console.log(`Wrote ${index.elements.length} elements to ${outFile}`);
+	console.log(`Wrote ${elements.length} elements to ${outFile}`);
 };
 
 // Only run when executed directly, not when imported by tests

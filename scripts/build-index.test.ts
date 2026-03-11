@@ -1,29 +1,76 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeAll, afterAll } from "vitest";
 
-import { deriveService, enrichElements, parseIndex, stripMarkdown } from "./build-index";
+import {
+	buildElements,
+	deriveService,
+	isCfnResource,
+	isConstruct,
+	stripMarkdown,
+} from "./build-index";
 
-// Helpers to build fixture HTML
+// ── Helpers to build JSII fixture data ───────────────────────────────
 
-const navGroups = (inner: string) => `<div class="navGroups">${inner}</div>`;
+type PartialType = {
+	fqn: string;
+	name: string;
+	kind?: "class" | "enum" | "interface";
+	namespace?: string;
+	assembly?: string;
+	base?: string;
+	abstract?: boolean;
+	docs?: {
+		summary?: string;
+		stability?: string;
+		deprecated?: string;
+		custom?: Record<string, string>;
+	};
+};
 
-const subNavGroup = (title: string, items: string[]) => `
-  <div class="navGroup subNavGroup" role="listitem">
-    <h4 class="navGroupSubcategoryTitle" role="presentation">${title}</h4>
-    <ul>
-      ${items.map((item) => `<li class="navListItem"><a class="navItem">${item}</a></li>`).join("")}
-    </ul>
-  </div>`;
+const jsiiType = (overrides: PartialType) => ({
+	kind: "class" as const,
+	assembly: "aws-cdk-lib",
+	...overrides,
+});
 
-const navGroup = (title: string, subNavGroups: string = "") => `
-  <div class="navGroup">
-    <h3 class="navGroupCategoryTitle collapsible">${title}<span class="arrow"></span></h3>
-    <ul>
-      <li class="navListItem"><a class="navItem" href="#">Overview</a></li>
-      ${subNavGroups}
-    </ul>
-  </div>`;
+const jsiiAssembly = (types: Record<string, ReturnType<typeof jsiiType>>) => ({
+	name: "aws-cdk-lib",
+	version: "2.200.0",
+	types,
+});
 
-const API_REFERENCE_GROUP = navGroup("API Reference");
+// Minimal base-class chain so isConstruct can walk to constructs.Construct
+const CONSTRUCT_CHAIN = {
+	"constructs.Construct": jsiiType({
+		fqn: "constructs.Construct",
+		name: "Construct",
+		assembly: "constructs",
+	}),
+	"aws-cdk-lib.Resource": jsiiType({
+		fqn: "aws-cdk-lib.Resource",
+		name: "Resource",
+		base: "constructs.Construct",
+		abstract: true,
+	}),
+	"aws-cdk-lib.CfnElement": jsiiType({
+		fqn: "aws-cdk-lib.CfnElement",
+		name: "CfnElement",
+		base: "constructs.Construct",
+		abstract: true,
+	}),
+	"aws-cdk-lib.CfnRefElement": jsiiType({
+		fqn: "aws-cdk-lib.CfnRefElement",
+		name: "CfnRefElement",
+		base: "aws-cdk-lib.CfnElement",
+		abstract: true,
+	}),
+	"aws-cdk-lib.CfnResource": jsiiType({
+		fqn: "aws-cdk-lib.CfnResource",
+		name: "CfnResource",
+		base: "aws-cdk-lib.CfnRefElement",
+	}),
+};
+
+// ── deriveService ────────────────────────────────────────────────────
 
 describe("deriveService", () => {
 	it("strips aws-cdk-lib.aws_ prefix", () => {
@@ -41,21 +88,129 @@ describe("deriveService", () => {
 	it("returns the name unchanged when there is no submodule", () => {
 		expect(deriveService("aws-cdk-lib")).toMatchInlineSnapshot(`"aws-cdk-lib"`);
 	});
+});
 
-	it("strips @aws-cdk/ prefix, -alpha suffix, and aws- prefix from scoped package", () => {
-		expect(deriveService("@aws-cdk/aws-gamelift-alpha")).toMatchInlineSnapshot(`"gamelift"`);
+// ── isConstruct ──────────────────────────────────────────────────────
+
+describe("isConstruct", () => {
+	it("returns true for constructs.Construct itself", () => {
+		expect(isConstruct("constructs.Construct", {})).toBe(true);
 	});
 
-	it("strips @aws-cdk/ prefix, -alpha suffix, and aws- prefix for bedrock", () => {
-		expect(deriveService("@aws-cdk/aws-bedrock-alpha")).toMatchInlineSnapshot(`"bedrock"`);
+	it("returns true for a class that directly extends constructs.Construct", () => {
+		const types = {
+			"my.Thing": jsiiType({
+				fqn: "my.Thing",
+				name: "Thing",
+				base: "constructs.Construct",
+			}),
+		};
+		expect(isConstruct("my.Thing", types)).toBe(true);
 	});
 
-	it("strips @aws-cdk/ prefix and -alpha suffix when no aws- prefix", () => {
-		expect(deriveService("@aws-cdk/amplify-alpha")).toMatchInlineSnapshot(`"amplify"`);
+	it("returns true for a class deep in the construct chain", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.aws_s3.Bucket": jsiiType({
+				fqn: "aws-cdk-lib.aws_s3.Bucket",
+				name: "Bucket",
+				namespace: "aws_s3",
+				base: "aws-cdk-lib.Resource",
+			}),
+		};
+		expect(isConstruct("aws-cdk-lib.aws_s3.Bucket", types)).toBe(true);
+	});
+
+	it("returns false for a class with no base", () => {
+		const types = {
+			"aws-cdk-lib.Duration": jsiiType({
+				fqn: "aws-cdk-lib.Duration",
+				name: "Duration",
+			}),
+		};
+		expect(isConstruct("aws-cdk-lib.Duration", types)).toBe(false);
+	});
+
+	it("returns false for a class whose chain does not reach constructs.Construct", () => {
+		const types = {
+			"aws-cdk-lib.SomeBase": jsiiType({
+				fqn: "aws-cdk-lib.SomeBase",
+				name: "SomeBase",
+			}),
+			"aws-cdk-lib.SomeChild": jsiiType({
+				fqn: "aws-cdk-lib.SomeChild",
+				name: "SomeChild",
+				base: "aws-cdk-lib.SomeBase",
+			}),
+		};
+		expect(isConstruct("aws-cdk-lib.SomeChild", types)).toBe(false);
+	});
+
+	it("returns false for an unknown fqn", () => {
+		expect(isConstruct("does.not.Exist", {})).toBe(false);
+	});
+
+	it("uses the cache on repeated calls", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.aws_s3.Bucket": jsiiType({
+				fqn: "aws-cdk-lib.aws_s3.Bucket",
+				name: "Bucket",
+				namespace: "aws_s3",
+				base: "aws-cdk-lib.Resource",
+			}),
+		};
+		const cache = new Map<string, boolean>();
+
+		isConstruct("aws-cdk-lib.aws_s3.Bucket", types, cache);
+		expect(cache.get("aws-cdk-lib.aws_s3.Bucket")).toBe(true);
+		expect(cache.get("aws-cdk-lib.Resource")).toBe(true);
+		expect(cache.get("constructs.Construct")).toBe(true);
 	});
 });
 
-describe("parseIndex", () => {
+// ── isCfnResource ────────────────────────────────────────────────────
+
+describe("isCfnResource", () => {
+	it("returns true when cloudformationResource custom tag is present", () => {
+		expect(
+			isCfnResource(
+				jsiiType({
+					fqn: "aws-cdk-lib.aws_s3.CfnBucket",
+					name: "CfnBucket",
+					docs: { custom: { cloudformationResource: "AWS::S3::Bucket" } },
+				}),
+			),
+		).toBe(true);
+	});
+
+	it("returns false when no custom tags exist", () => {
+		expect(
+			isCfnResource(
+				jsiiType({
+					fqn: "aws-cdk-lib.aws_s3.Bucket",
+					name: "Bucket",
+					docs: { summary: "An S3 bucket." },
+				}),
+			),
+		).toBe(false);
+	});
+
+	it("returns false when docs are absent", () => {
+		expect(
+			isCfnResource(
+				jsiiType({
+					fqn: "aws-cdk-lib.aws_s3.Bucket",
+					name: "Bucket",
+				}),
+			),
+		).toBe(false);
+	});
+});
+
+// ── buildElements ────────────────────────────────────────────────────
+
+describe("buildElements", () => {
 	beforeAll(() => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("1992-05-22"));
@@ -65,344 +220,187 @@ describe("parseIndex", () => {
 		vi.useRealTimers();
 	});
 
-	it("returns empty elements for empty HTML", () => {
-		expect(parseIndex("")).toMatchInlineSnapshot(`
-      {
-        "elements": [],
-        "generatedAt": "1992-05-22",
-      }
-    `);
+	it("returns an empty array for an assembly with no types", () => {
+		expect(buildElements(jsiiAssembly({}))).toEqual([]);
 	});
 
-	it("returns empty elements for blocklisted groups only", () => {
-		expect(parseIndex(navGroups(API_REFERENCE_GROUP))).toMatchInlineSnapshot(`
-      {
-        "elements": [],
-        "generatedAt": "1992-05-22",
-      }
-    `);
+	it("builds a Construct element from a non-abstract class extending Construct", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.aws_s3.Bucket": jsiiType({
+				fqn: "aws-cdk-lib.aws_s3.Bucket",
+				name: "Bucket",
+				namespace: "aws_s3",
+				base: "aws-cdk-lib.Resource",
+				docs: { summary: "An S3 bucket with associated policy objects." },
+			}),
+		};
+		const elements = buildElements(jsiiAssembly(types));
+
+		expect(elements).toContainEqual({
+			id: "aws-cdk-lib.aws_s3.Bucket",
+			name: "Bucket",
+			type: "Construct",
+			service: "s3",
+			cdkReferenceDoc: "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html",
+			description: "An S3 bucket with associated policy objects.",
+		});
 	});
 
-	it("returns empty elements for a module with no indexed subgroups", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP +
-				navGroup(
-					"aws-cdk-lib.aws_s3",
-					subNavGroup("Interfaces", ["IBucket"]) + subNavGroup("Enums", ["BucketEncryption"]),
-				),
-		);
-		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [],
-        "generatedAt": "1992-05-22",
-      }
-    `);
+	it("builds a CloudFormation Resource element from a class with the cloudformationResource tag", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.aws_s3.CfnBucket": jsiiType({
+				fqn: "aws-cdk-lib.aws_s3.CfnBucket",
+				name: "CfnBucket",
+				namespace: "aws_s3",
+				base: "aws-cdk-lib.CfnResource",
+				docs: {
+					summary: "A CloudFormation `AWS::S3::Bucket`.",
+					stability: "external",
+					custom: { cloudformationResource: "AWS::S3::Bucket" },
+				},
+			}),
+		};
+		const elements = buildElements(jsiiAssembly(types));
+
+		expect(elements).toContainEqual({
+			id: "aws-cdk-lib.aws_s3.CfnBucket",
+			name: "CfnBucket",
+			type: "CloudFormation Resource",
+			service: "s3",
+			cdkReferenceDoc:
+				"https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.CfnBucket.html",
+			description: "A CloudFormation AWS::S3::Bucket.",
+		});
 	});
 
-	it("parses CloudFormation Resources from a single module", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP +
-				navGroup(
-					"aws-cdk-lib.aws_fis",
-					subNavGroup("CloudFormation Resources", [
-						"CfnExperimentTemplate",
-						"CfnTargetAccountConfiguration",
-					]),
-				),
-		);
-		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_fis.CfnExperimentTemplate.html",
-            "id": "aws-cdk-lib.aws_fis.CfnExperimentTemplate",
-            "name": "CfnExperimentTemplate",
-            "service": "fis",
-            "type": "CloudFormation Resource",
-          },
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_fis.CfnTargetAccountConfiguration.html",
-            "id": "aws-cdk-lib.aws_fis.CfnTargetAccountConfiguration",
-            "name": "CfnTargetAccountConfiguration",
-            "service": "fis",
-            "type": "CloudFormation Resource",
-          },
-        ],
-        "generatedAt": "1992-05-22",
-      }
-    `);
+	it("excludes abstract classes", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.aws_s3.BucketBase": jsiiType({
+				fqn: "aws-cdk-lib.aws_s3.BucketBase",
+				name: "BucketBase",
+				namespace: "aws_s3",
+				base: "aws-cdk-lib.Resource",
+				abstract: true,
+			}),
+		};
+		const result = buildElements(jsiiAssembly(types));
+
+		expect(result.find((e) => e.name === "BucketBase")).toBeUndefined();
 	});
 
-	it("flattens CloudFormation Resources from multiple modules in order", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP +
-				navGroup(
-					"aws-cdk-lib.aws_s3",
-					subNavGroup("CloudFormation Resources", ["CfnBucket", "CfnBucketPolicy"]),
-				) +
-				navGroup(
-					"aws-cdk-lib.aws_fis",
-					subNavGroup("CloudFormation Resources", ["CfnExperimentTemplate"]),
-				),
-		);
-		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.CfnBucket.html",
-            "id": "aws-cdk-lib.aws_s3.CfnBucket",
-            "name": "CfnBucket",
-            "service": "s3",
-            "type": "CloudFormation Resource",
-          },
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.CfnBucketPolicy.html",
-            "id": "aws-cdk-lib.aws_s3.CfnBucketPolicy",
-            "name": "CfnBucketPolicy",
-            "service": "s3",
-            "type": "CloudFormation Resource",
-          },
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_fis.CfnExperimentTemplate.html",
-            "id": "aws-cdk-lib.aws_fis.CfnExperimentTemplate",
-            "name": "CfnExperimentTemplate",
-            "service": "fis",
-            "type": "CloudFormation Resource",
-          },
-        ],
-        "generatedAt": "1992-05-22",
-      }
-    `);
+	it("excludes enums and interfaces", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.aws_s3.BucketEncryption": jsiiType({
+				fqn: "aws-cdk-lib.aws_s3.BucketEncryption",
+				name: "BucketEncryption",
+				namespace: "aws_s3",
+				kind: "enum",
+			}),
+			"aws-cdk-lib.aws_s3.IBucket": jsiiType({
+				fqn: "aws-cdk-lib.aws_s3.IBucket",
+				name: "IBucket",
+				namespace: "aws_s3",
+				kind: "interface",
+			}),
+		};
+		const result = buildElements(jsiiAssembly(types));
+
+		expect(result.find((e) => e.name === "BucketEncryption")).toBeUndefined();
+		expect(result.find((e) => e.name === "IBucket")).toBeUndefined();
 	});
 
-	it("indexes Constructs alongside CloudFormation Resources in document order", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP +
-				navGroup(
-					"aws-cdk-lib.aws_s3",
-					subNavGroup("Constructs", ["Bucket"]) +
-						subNavGroup("CloudFormation Resources", ["CfnBucket"]) +
-						subNavGroup("Interfaces", ["IBucket"]),
-				),
-		);
-		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html",
-            "id": "aws-cdk-lib.aws_s3.Bucket",
-            "name": "Bucket",
-            "service": "s3",
-            "type": "Construct",
-          },
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.CfnBucket.html",
-            "id": "aws-cdk-lib.aws_s3.CfnBucket",
-            "name": "CfnBucket",
-            "service": "s3",
-            "type": "CloudFormation Resource",
-          },
-        ],
-        "generatedAt": "1992-05-22",
-      }
-    `);
+	it("excludes non-construct classes like Duration", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.Duration": jsiiType({
+				fqn: "aws-cdk-lib.Duration",
+				name: "Duration",
+			}),
+		};
+		const result = buildElements(jsiiAssembly(types));
+
+		expect(result.find((e) => e.name === "Duration")).toBeUndefined();
 	});
 
-	it("parses Constructs from a module with only Constructs", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP +
-				navGroup("aws-cdk-lib.aws_lambda_nodejs", subNavGroup("Constructs", ["NodejsFunction"])),
-		);
-		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_lambda_nodejs.NodejsFunction.html",
-            "id": "aws-cdk-lib.aws_lambda_nodejs.NodejsFunction",
-            "name": "NodejsFunction",
-            "service": "lambda_nodejs",
-            "type": "Construct",
-          },
-        ],
-        "generatedAt": "1992-05-22",
-      }
-    `);
+	it("omits description when docs.summary is absent", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.aws_s3.Bucket": jsiiType({
+				fqn: "aws-cdk-lib.aws_s3.Bucket",
+				name: "Bucket",
+				namespace: "aws_s3",
+				base: "aws-cdk-lib.Resource",
+			}),
+		};
+		const elements = buildElements(jsiiAssembly(types));
+		const bucket = elements.find((e) => e.name === "Bucket");
+
+		expect(bucket).toBeDefined();
+		expect(bucket).not.toHaveProperty("description");
 	});
 
-	it("ignores subgroups that are not Constructs or CloudFormation Resources", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP +
-				navGroup(
-					"aws-cdk-lib.aws_s3",
-					subNavGroup("Structs", ["BucketProps"]) + subNavGroup("Interfaces", ["IBucket"]),
-				),
-		);
-		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [],
-        "generatedAt": "1992-05-22",
-      }
-    `);
+	it("strips markdown from descriptions", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.aws_s3.Bucket": jsiiType({
+				fqn: "aws-cdk-lib.aws_s3.Bucket",
+				name: "Bucket",
+				namespace: "aws_s3",
+				base: "aws-cdk-lib.Resource",
+				docs: {
+					summary: "A public key for [signed URLs](https://example.com) .",
+				},
+			}),
+		};
+		const elements = buildElements(jsiiAssembly(types));
+		const bucket = elements.find((e) => e.name === "Bucket");
+
+		expect(bucket?.description).toBe("A public key for signed URLs .");
+	});
+
+	it("uses aws-cdk-lib as service for root-module constructs", () => {
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.Stack": jsiiType({
+				fqn: "aws-cdk-lib.Stack",
+				name: "Stack",
+				base: "constructs.Construct",
+			}),
+		};
+		const elements = buildElements(jsiiAssembly(types));
+		const stack = elements.find((e) => e.name === "Stack");
+
+		expect(stack?.service).toBe("aws-cdk-lib");
 	});
 
 	it("preserves underscores in service names without aws_ prefix", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP +
-				navGroup("aws-cdk-lib.alexa_ask", subNavGroup("CloudFormation Resources", ["CfnSkill"])),
-		);
-		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.alexa_ask.CfnSkill.html",
-            "id": "aws-cdk-lib.alexa_ask.CfnSkill",
-            "name": "CfnSkill",
-            "service": "alexa_ask",
-            "type": "CloudFormation Resource",
-          },
-        ],
-        "generatedAt": "1992-05-22",
-      }
-    `);
-	});
+		const types = {
+			...CONSTRUCT_CHAIN,
+			"aws-cdk-lib.alexa_ask.CfnSkill": jsiiType({
+				fqn: "aws-cdk-lib.alexa_ask.CfnSkill",
+				name: "CfnSkill",
+				namespace: "alexa_ask",
+				base: "aws-cdk-lib.CfnResource",
+				docs: { custom: { cloudformationResource: "Alexa::ASK::Skill" } },
+			}),
+		};
+		const elements = buildElements(jsiiAssembly(types));
 
-	it("strips superscript footnote characters from module names", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP +
-				navGroup(
-					"aws-cdk-lib.aws_route53profiles¹",
-					subNavGroup("CloudFormation Resources", ["CfnProfile"]),
-				),
+		expect(elements).toContainEqual(
+			expect.objectContaining({
+				id: "aws-cdk-lib.alexa_ask.CfnSkill",
+				service: "alexa_ask",
+				type: "CloudFormation Resource",
+			}),
 		);
-		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_route53profiles.CfnProfile.html",
-            "id": "aws-cdk-lib.aws_route53profiles.CfnProfile",
-            "name": "CfnProfile",
-            "service": "route53profiles",
-            "type": "CloudFormation Resource",
-          },
-        ],
-        "generatedAt": "1992-05-22",
-      }
-    `);
-	});
-
-	it("replaces / with _ in scoped package URLs and derives service correctly", () => {
-		const html = navGroups(
-			API_REFERENCE_GROUP +
-				navGroup(
-					"@aws-cdk/aws-gamelift-alpha",
-					subNavGroup("Constructs", ["QueuedMatchmakingConfiguration"]),
-				),
-		);
-		expect(parseIndex(html)).toMatchInlineSnapshot(`
-      {
-        "elements": [
-          {
-            "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-gamelift-alpha.QueuedMatchmakingConfiguration.html",
-            "id": "@aws-cdk/aws-gamelift-alpha.QueuedMatchmakingConfiguration",
-            "name": "QueuedMatchmakingConfiguration",
-            "service": "gamelift",
-            "type": "Construct",
-          },
-        ],
-        "generatedAt": "1992-05-22",
-      }
-    `);
 	});
 });
 
-describe("enrichElements", () => {
-	it("adds description to elements with a matching entry", () => {
-		const elements = [
-			{
-				id: "aws-cdk-lib.aws_s3.Bucket",
-				name: "Bucket",
-				type: "Construct" as const,
-				service: "s3",
-				cdkReferenceDoc:
-					"https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html",
-			},
-		];
-		const descriptions = new Map([
-			["aws-cdk-lib.aws_s3.Bucket", "An S3 bucket with associated policy objects."],
-		]);
-
-		expect(enrichElements(elements, descriptions)).toMatchInlineSnapshot(`
-      [
-        {
-          "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html",
-          "description": "An S3 bucket with associated policy objects.",
-          "id": "aws-cdk-lib.aws_s3.Bucket",
-          "name": "Bucket",
-          "service": "s3",
-          "type": "Construct",
-        },
-      ]
-    `);
-	});
-
-	it("omits description for elements without a matching entry", () => {
-		const elements = [
-			{
-				id: "@aws-cdk/aws-gamelift-alpha.QueuedMatchmakingConfiguration",
-				name: "QueuedMatchmakingConfiguration",
-				type: "Construct" as const,
-				service: "gamelift",
-				cdkReferenceDoc:
-					"https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-gamelift-alpha.QueuedMatchmakingConfiguration.html",
-			},
-		];
-		const descriptions = new Map<string, string>();
-
-		expect(enrichElements(elements, descriptions)).toMatchInlineSnapshot(`
-      [
-        {
-          "cdkReferenceDoc": "https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-gamelift-alpha.QueuedMatchmakingConfiguration.html",
-          "id": "@aws-cdk/aws-gamelift-alpha.QueuedMatchmakingConfiguration",
-          "name": "QueuedMatchmakingConfiguration",
-          "service": "gamelift",
-          "type": "Construct",
-        },
-      ]
-    `);
-	});
-
-	it("enriches matching elements and leaves unmatched ones unchanged", () => {
-		const elements = [
-			{
-				id: "aws-cdk-lib.aws_s3.Bucket",
-				name: "Bucket",
-				type: "Construct" as const,
-				service: "s3",
-				cdkReferenceDoc:
-					"https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html",
-			},
-			{
-				id: "@aws-cdk/aws-gamelift-alpha.QueuedMatchmakingConfiguration",
-				name: "QueuedMatchmakingConfiguration",
-				type: "Construct" as const,
-				service: "gamelift",
-				cdkReferenceDoc:
-					"https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-gamelift-alpha.QueuedMatchmakingConfiguration.html",
-			},
-		];
-		const descriptions = new Map([
-			["aws-cdk-lib.aws_s3.Bucket", "An S3 bucket with associated policy objects."],
-		]);
-
-		const result = enrichElements(elements, descriptions);
-		expect(result[0].description).toBe("An S3 bucket with associated policy objects.");
-		expect(result[1]).not.toHaveProperty("description");
-	});
-
-	it("returns empty array for empty elements", () => {
-		expect(enrichElements([], new Map())).toEqual([]);
-	});
-});
+// ── stripMarkdown ────────────────────────────────────────────────────
 
 describe("stripMarkdown", () => {
 	it("returns plain text unchanged", () => {
