@@ -13,10 +13,10 @@ const glowShadow = [
 ].join(",");
 
 export const AsciiTitle = () => (
-	<div className="mb-8 flex w-full flex-col items-center">
+	<div className="flex w-full flex-col items-center">
 		<h1 className="sr-only">CDK Search</h1>
 		<pre
-			className="select-none whitespace-pre font-mono leading-none tracking-[-0.5px] text-indigo-300"
+			className="mb-[3em] select-none whitespace-pre font-mono leading-none tracking-[-0.5px] text-indigo-300"
 			style={{
 				textShadow: glowShadow,
 				fontSize: "clamp(5px, 1.9vw, 11px)",
