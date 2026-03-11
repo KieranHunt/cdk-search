@@ -11,7 +11,7 @@ export const Footer = () => (
 		<p>Last updated @ {generatedAt}</p>
 		<p className="text-right">
 			Made with <DotSwarm /> by{" "}
-			<a href="https://kieran.casa" className="no-underline text-slate-500 hover:text-slate-300">
+			<a href="https://kieran.casa" className="no-underline text-slate-400 hover:text-slate-300">
 				Kieran
 			</a>
 		</p>
