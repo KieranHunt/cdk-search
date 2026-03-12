@@ -14,6 +14,28 @@
 		"typescript/no-explicit-any": "error",
 		"typescript/no-non-null-assertion": "warn",
 		"typescript/consistent-type-imports": "error",
-		"typescript/no-unused-vars": "error"
+		"typescript/no-unused-vars": "error",
+		"react/forbid-dom-props": [
+			"error",
+			{
+				"forbid": [
+					{
+						"propName": "style",
+						"message": "Use Tailwind classes instead of inline styles."
+					}
+				]
+			}
+		],
+		"react/forbid-elements": [
+			"error",
+			{
+				"forbid": [
+					{
+						"element": "style",
+						"message": "Use Tailwind classes instead of <style> elements."
+					}
+				]
+			}
+		]
 	}
 }
