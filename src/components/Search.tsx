@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import indexData from "../../public/search-index.json";
+import { useQueryParam } from "../hooks/useQueryParam";
 import type { Element } from "../types";
 
 const elements: Element[] = indexData.elements as Element[];
@@ -23,7 +24,8 @@ const openInNewTab = (url: string): void => {
 };
 
 export const Search = () => {
-	const [query, setQuery] = useState("");
+	const initialQuery = useQueryParam("q");
+	const [query, setQuery] = useState(initialQuery ?? "");
 	const [activeIndex, setActiveIndex] = useState(0);
 	const listRef = useRef<HTMLUListElement>(null);
 
