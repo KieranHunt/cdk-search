@@ -17,7 +17,7 @@ const quicklinkJson = JSON.stringify([
 const quicklinkUrl = URL.createObjectURL(new Blob([quicklinkJson], { type: "application/json" }));
 
 export const Footer = () => (
-	<div className="mt-4 px-3 text-xs text-slate-400 grid grid-cols-2 gap-x-4">
+	<div className="mt-4 px-3 text-xs text-slate-400 grid grid-cols-2 gap-x-4 gap-y-1">
 		<p>Last updated @ {generatedAt}</p>
 		<p className="text-right">
 			Made with <DotSwarm /> by{" "}
@@ -37,12 +37,13 @@ export const Footer = () => (
 		</p>
 		<p />
 		<p className="text-right">
+			Add to{" "}
 			<a
 				href={quicklinkUrl}
 				download="cdk-search.quicklink.json"
 				className="no-underline hover:text-slate-300"
 			>
-				Add to <RaycastLogo /> Raycast
+				<RaycastLogo /> Raycast
 			</a>
 		</p>
 	</div>

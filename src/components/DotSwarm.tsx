@@ -40,17 +40,19 @@ export const DotSwarm = () => {
 	const dots = generateDots();
 
 	return (
-		<svg
-			width={VIEW_SIZE}
-			height={VIEW_SIZE}
-			viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`}
-			fill="currentColor"
-			className="inline-block align-middle"
-			aria-hidden="true"
-		>
-			{dots.map((dot, i) => (
-				<circle key={i} cx={dot.cx} cy={dot.cy} r={DOT_RADIUS} opacity={dot.opacity} />
-			))}
-		</svg>
+		<span className="relative inline-block w-5">
+			<svg
+				width={VIEW_SIZE}
+				height={VIEW_SIZE}
+				viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`}
+				fill="currentColor"
+				className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+				aria-hidden="true"
+			>
+				{dots.map((dot, i) => (
+					<circle key={i} cx={dot.cx} cy={dot.cy} r={DOT_RADIUS} opacity={dot.opacity} />
+				))}
+			</svg>
+		</span>
 	);
 };
