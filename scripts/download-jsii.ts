@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 
+import ky from "ky";
 import { z } from "zod";
 
 // ── Zod schemas for the JSII assembly ────────────────────────────────
@@ -40,12 +41,14 @@ const JSII_URL = "https://unpkg.com/aws-cdk-lib@latest/.jsii.gz";
 
 const main = async () => {
 	console.log(`Fetching JSII assembly from ${JSII_URL}...`);
-	const response = await fetch(JSII_URL);
-	if (!response.ok) {
-		throw new Error(`Failed to fetch JSII assembly: ${response.status} ${response.statusText}`);
-	}
-
-	const compressed = Buffer.from(await response.arrayBuffer());
+	const compressed = Buffer.from(
+		await ky(JSII_URL, {
+			retry: {
+				limit: 60,
+				delay: () => 1000,
+			},
+		}).arrayBuffer(),
+	);
 	const json = gunzipSync(compressed).toString("utf-8");
 	const assembly = JsiiAssemblySchema.parse(JSON.parse(json));
 
