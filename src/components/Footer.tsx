@@ -25,7 +25,7 @@ export const Footer = () => (
 			</a>
 			,{" "}
 			<a
-				href="https://www.apache.org/licenses/LICENSE-2.0"
+				href="https://github.com/aws/aws-cdk/blob/main/LICENSE"
 				className="no-underline hover:text-slate-300"
 			>
 				Apache-2.0
