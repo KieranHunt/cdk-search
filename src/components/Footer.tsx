@@ -35,7 +35,19 @@ export const Footer = () => (
 				<GitHubLogo /> Github
 			</a>
 		</p>
-		<p />
+		<p>
+			Construct data from{" "}
+			<a href="https://github.com/aws/aws-cdk" className="no-underline hover:text-slate-300">
+				aws-cdk-lib
+			</a>
+			,{" "}
+			<a
+				href="https://www.apache.org/licenses/LICENSE-2.0"
+				className="no-underline hover:text-slate-300"
+			>
+				Apache-2.0
+			</a>
+		</p>
 		<p className="text-right">
 			Add to{" "}
 			<a
