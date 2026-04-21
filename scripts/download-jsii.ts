@@ -44,8 +44,9 @@ const main = async () => {
 	const compressed = Buffer.from(
 		await ky(JSII_URL, {
 			retry: {
-				limit: 60,
+				limit: 30,
 				delay: () => 1000,
+				retryOnTimeout: true,
 			},
 		}).arrayBuffer(),
 	);
