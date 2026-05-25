@@ -29,7 +29,7 @@
     "bun-plugin-tailwind": "latest",
     "ky": "^2.0.1",
     "lefthook": "^2.1.3",
-    "oxfmt": "^0.50.0",
+    "oxfmt": "^0.51.0",
     "oxlint": "^1.51.0",
     "remove-markdown": "^0.6.3",
     "typescript": "^6.0.3",
